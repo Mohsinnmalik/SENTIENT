@@ -1,319 +1,264 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Mic, Send, Zap, Activity, MessageSquare, 
-  ChevronRight, Brain, AlertCircle, TrendingUp, CheckCircle2 
-} from "lucide-react";
+import { ArrowLeft, Play, StopCircle, Zap, Activity, MessageSquare, Brain, Clock, Volume2, MicOff, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import CameraAnalyzer from "@/components/camera-analyzer";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { analyzeTranscript, getSimulatedTranscript } from "@/lib/analysis";
 
-export default function SessionPage({ params }: { params: { id: string } }) {
+type Phase = "idle" | "active" | "analyzing";
+
+export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
-  const [toolkit, setToolkit] = useState<any>(null);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
-  const [eventLog, setEventLog] = useState<string[]>([]);
-  const [scores, setScores] = useState({
-    verbal: 0,
-    behaviour: 0,
-    total: 0,
-    signal: "Neutral"
-  });
 
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [toolkit, setToolkit] = useState<any>(null);
+  const [qIndex, setQIndex] = useState(0);
+  const [hasMounted, setHasMounted] = useState(false);
+  const [behaviourScore, setBehaviourScore] = useState(5);
+  const [behaviourEvents, setBehaviourEvents] = useState<string[]>([]);
+  const [signal, setSignal] = useState("Neutral");
+  const [elapsed, setElapsed] = useState(0);
+  const startTimeRef = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setHasMounted(true);
-    fetchSessionData();
-  }, [params.id]);
+  const { transcript, interimTranscript, isListening, isDenied, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
+  useEffect(() => { setHasMounted(true); fetchData(); }, [id]);
+  useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [behaviourEvents]);
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [eventLog]);
-
-  const fetchSessionData = async () => {
-    try {
-      const res = await fetch(`/api/session?id=${params.id}`);
-      if (!res.ok) throw new Error("Session not found");
-      const { session, toolkit } = await res.json();
-      
-      setSession(session);
-      setToolkit(toolkit);
-      addLog("Session synced with MongoDB. Loading intelligence layers...");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load session details");
+    if (phase === "active") {
+      timerRef.current = setInterval(() => setElapsed(p => p + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-  };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [phase]);
 
-  const addLog = (event: string) => {
-    setEventLog(prev => [...prev.slice(-4), event]);
-  };
-
-  const handleScoreUpdate = (bScore: number, signal: string) => {
-    setScores(prev => ({
-      ...prev,
-      behaviour: bScore,
-      total: (prev.verbal + bScore) / 2,
-      signal
-    }));
-  };
-
-  const handleSubmitAnswer = async () => {
-    if (!answer.trim()) return;
-    setIsSubmitting(true);
-    
+  const fetchData = async () => {
     try {
-      const vScore = Math.floor(Math.random() * 10); // Simulated AI Verbal Analysis
-      
-      const res = await fetch("/api/session", {
+      const res = await fetch(`/api/session?id=${id}`);
+      if (res.ok) {
+        const { toolkit } = await res.json();
+        setToolkit(toolkit);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const addEvent = useCallback((event: string) => {
+    const ts = new Date().toLocaleTimeString([], { hour12: false });
+    setBehaviourEvents(prev => [...prev.slice(-9), `[${ts}] ${event}`]);
+  }, []);
+
+  const handleScoreUpdate = useCallback((score: number, sig: string) => {
+    setBehaviourScore(score); setSignal(sig);
+  }, []);
+
+  const handleStart = () => {
+    setPhase("active");
+    startTimeRef.current = Date.now();
+    setElapsed(0);
+    setQIndex(0);
+    setBehaviourEvents([]);
+    setBehaviourScore(5);
+    resetTranscript();
+    startListening();
+    addEvent("Interaction started — audio & behaviour tracking active.");
+    toast.success("Live session started!");
+  };
+
+  const handleEnd = async () => {
+    stopListening();
+    setPhase("analyzing");
+    const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const finalTranscript = transcript.trim() || getSimulatedTranscript();
+    if (!transcript.trim()) addEvent("Mic unavailable — using simulated transcript.");
+
+    const result = analyzeTranscript(finalTranscript, behaviourScore, behaviourEvents);
+
+    // Store fallback in sessionStorage first
+    const payload = { sessionId: id, transcript: finalTranscript, behaviourEvents, behaviourScore, interactionDuration: duration, ...result };
+    sessionStorage.setItem("latest_report", JSON.stringify(payload));
+
+    try {
+      const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "answer",
-          sessionId: params.id,
-          question: toolkit?.reviewQuestions[currentQIndex],
-          answer,
-          score: (vScore + scores.behaviour) / 2
-        }),
+        body: JSON.stringify(payload),
       });
-      
-      if (!res.ok) throw new Error("Failed to save answer");
-      
-      setScores(prev => ({ ...prev, verbal: vScore }));
-      addLog(`Answer submitted for Q${currentQIndex + 1}. Verbal Score: ${vScore}`);
-      
-      if (currentQIndex < (toolkit?.reviewQuestions?.length || 0) - 1) {
-        setCurrentQIndex(prev => prev + 1);
-        setAnswer("");
-      } else {
-        toast.success("Final question answered! Review complete.");
-        handleEndSession();
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Could not save response");
-    } finally {
-      setIsSubmitting(false);
+      if (!res.ok) throw new Error("Save failed");
+      const report = await res.json();
+      router.push(`/report/${report._id}`);
+    } catch {
+      router.push("/report/latest");
     }
   };
 
-  const handleEndSession = async () => {
-     try {
-       await fetch("/api/session", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-           action: "end",
-           sessionId: params.id
-         }),
-       });
-       router.push("/dashboard"); // Or a report page
-     } catch (err) {
-       console.error(err);
-     }
-  };
+  const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const qList: string[] = toolkit?.reviewQuestions || ["How would you describe your first impression of this product?", "Which feature stood out most?", "What would you change?"];
 
   if (!hasMounted) return null;
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
-               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+    <div className="max-w-[1600px] mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="h-5 w-5" /></Button></Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Live Product Discovery</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              Session ID: {params.id}
+            <h1 className="text-2xl font-bold flex items-center gap-3">
+              Live Interaction
+              {phase === "active" && <><span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" /><span className="text-red-500 text-sm font-normal">LIVE</span></>}
+            </h1>
+            <p className="text-xs text-muted-foreground font-mono flex items-center gap-3">
+              {id}
+              {phase === "active" && <span className="text-primary flex items-center gap-1"><Clock className="h-3 w-3" />{fmt(elapsed)}</span>}
             </p>
           </div>
         </div>
-        
-        {/* Intelligence Signal Banner */}
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={scores.signal}
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            className={`px-6 py-2 rounded-2xl border flex items-center gap-3 shadow-lg ${
-              scores.signal.includes("High") ? 'bg-primary/10 border-primary text-primary shadow-primary/20' : 
-              scores.signal.includes("Low") ? 'bg-amber-500/10 border-amber-500 text-amber-500 shadow-amber-500/20' : 
-              'bg-slate-500/10 border-slate-500 text-slate-500'
-            }`}
-          >
-            <Zap className={`h-5 w-5 ${scores.signal.includes("High") ? 'fill-current' : ''}`} />
-            <span className="font-black uppercase tracking-widest text-xs">
-              AI Insight: {scores.signal}
-            </span>
-          </motion.div>
-        </AnimatePresence>
+        <div className="flex items-center gap-3">
+          <AnimatePresence mode="wait">
+            <motion.div key={signal} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 8, opacity: 0 }}
+              className={`px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest flex items-center gap-2 ${signal.includes("High") ? "bg-primary/10 border-primary text-primary" : signal.includes("Low") ? "bg-amber-500/10 border-amber-500 text-amber-500" : "bg-slate-500/10 border-slate-500 text-slate-400"}`}>
+              <Zap className={`h-4 w-4 ${signal.includes("High") ? "fill-current" : ""}`} />{signal}
+            </motion.div>
+          </AnimatePresence>
+          {phase === "idle" && <Button onClick={handleStart} className="h-11 px-6 bg-green-500 hover:bg-green-600 text-white font-bold gap-2 rounded-xl shadow-lg shadow-green-500/20"><Play className="h-4 w-4 fill-current" />Start Interaction</Button>}
+          {phase === "active" && <Button onClick={handleEnd} variant="destructive" className="h-11 px-6 font-bold gap-2 rounded-xl"><StopCircle className="h-4 w-4" />End Interaction</Button>}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        {/* Left: Discovery Logic */}
-        <div className="xl:col-span-7 space-y-8">
-          <Card className="border-none bg-background/40 backdrop-blur-md shadow-2xl ring-1 ring-white/10">
-            <CardHeader className="pb-8">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="px-3 py-1 font-mono text-primary border-primary/20">
-                   QUESTION {currentQIndex + 1} OF {toolkit?.reviewQuestions?.length || 5}
-                </Badge>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                   <TrendingUp className="h-3 w-3" />
-                   Intent Mapping: Active
+      {/* Analyzing overlay */}
+      {phase === "analyzing" && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center min-h-[450px] space-y-6 text-center">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <Brain className="absolute inset-0 m-auto h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-3xl font-black">Analyzing Interaction...</h2>
+          <p className="text-muted-foreground">Processing verbal signals, behaviour patterns and generating AI report.</p>
+          <div className="flex gap-2 flex-wrap justify-center">
+            {["Transcript Analysis", "Behaviour Scoring", "Intent Detection", "Generating Summary"].map((s, i) => (
+              <motion.span key={s} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.5 }}
+                className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary">✓ {s}</motion.span>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main Grid */}
+      {phase !== "analyzing" && (
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          {/* LEFT */}
+          <div className="xl:col-span-7 space-y-6">
+            {/* Question */}
+            <Card className="border-none bg-background/40 backdrop-blur-md shadow-2xl ring-1 ring-white/10">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="font-mono text-primary border-primary/20">Q {qIndex + 1} / {qList.length}</Badge>
+                  {phase === "active" && qIndex < qList.length - 1 && (
+                    <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => { setQIndex(p => p + 1); addEvent(`Moved to Q${qIndex + 2}.`); }}>Next →</Button>
+                  )}
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div key={qIndex} initial={{ x: 15, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -15, opacity: 0 }} className="mt-4">
+                    <CardTitle className="text-2xl font-black leading-tight">"{qList[qIndex]}"</CardTitle>
+                  </motion.div>
+                </AnimatePresence>
+              </CardHeader>
+            </Card>
+
+            {/* Transcript + Events */}
+            <Card className={`border-none backdrop-blur-md ring-1 shadow-xl transition-all ${phase === "active" ? "ring-green-500/20 bg-green-500/5" : "ring-white/5 bg-black/10"}`}>
+              <CardHeader className="py-3 border-b border-white/5 flex flex-row items-center justify-between">
+                <CardTitle className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
+                  {isListening ? <><Volume2 className="h-3 w-3 text-green-500 animate-pulse" /><span className="text-green-500">Live Transcript</span></>
+                    : <><MessageSquare className="h-3 w-3" />Transcript{isDenied && <span className="text-amber-500 ml-1">(Simulated)</span>}</>}
+                </CardTitle>
+                {phase === "active" && (
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${isListening ? "bg-green-500 animate-pulse" : "bg-slate-500"}`} />
+                    <span className="text-[9px] font-mono text-slate-500">{isListening ? "RECORDING" : "PAUSED"}</span>
+                  </div>
+                )}
+              </CardHeader>
+              <div className="p-4 min-h-[160px] max-h-[200px] overflow-y-auto font-mono text-[11px] text-slate-300 space-y-2">
+                {phase === "idle" && (
+                  <div className="h-28 flex flex-col items-center justify-center text-slate-600 gap-2">
+                    <MicOff className="h-7 w-7 opacity-20" />
+                    <p className="text-xs text-center">Press <strong>Start Interaction</strong> to begin voice capture.</p>
+                  </div>
+                )}
+                {transcript && <p className="leading-relaxed text-slate-200">{transcript}</p>}
+                {interimTranscript && <p className="text-slate-500 italic">{interimTranscript}...</p>}
+                {isDenied && phase === "active" && (
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <AlertCircle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-amber-500 text-[10px]">Mic denied — demo mode active. Simulated transcript will be used for analysis.</p>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-white/5">
+                <div className="px-4 py-2 bg-white/5 flex items-center gap-2">
+                  <Activity className="h-3 w-3 text-primary" />
+                  <span className="text-[9px] uppercase tracking-widest text-slate-500 font-black">Real-time Behaviour Log</span>
+                </div>
+                <div className="px-4 pb-3 max-h-[120px] overflow-y-auto space-y-1">
+                  {behaviourEvents.length === 0
+                    ? <p className="text-[10px] text-slate-600 italic">Events appear here during interaction...</p>
+                    : behaviourEvents.map((e, i) => <div key={i} className="text-[10px] font-mono text-slate-400 border-l border-primary/20 pl-2 py-0.5">{e}</div>)
+                  }
+                  <div ref={logEndRef} />
                 </div>
               </div>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentQIndex}
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  className="mt-6"
-                >
-                  <CardTitle className="text-3xl font-black leading-tight text-foreground">
-                    "{toolkit?.reviewQuestions[currentQIndex] || "How do you perceive the overall product value?"}"
-                  </CardTitle>
-                </motion.div>
-              </AnimatePresence>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="relative">
-                <Input 
-                  placeholder="Type participant's verbal response or use voice detection..."
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmitAnswer()}
-                  className="h-16 pl-6 pr-16 text-lg bg-black/5 border-white/10 rounded-2xl focus-visible:ring-primary shadow-inner"
-                />
-                <Button 
-                  size="icon" 
-                  disabled={isSubmitting}
-                  onClick={handleSubmitAnswer}
-                  className="absolute right-2 top-2 h-12 w-12 rounded-xl bg-primary text-white shadow-lg transition-all hover:scale-110 active:scale-95"
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-center gap-8 py-4 opacity-50">
-                 <button className="flex flex-col items-center gap-2 hover:text-primary transition-colors group">
-                    <div className="h-12 w-12 rounded-full border border-dashed border-current flex items-center justify-center group-hover:bg-primary/10">
-                       <Mic className="h-5 w-5" />
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest">Start Voice</span>
-                 </button>
-                 <button className="flex flex-col items-center gap-2 hover:text-primary transition-colors group">
-                    <div className="h-12 w-12 rounded-full border border-dashed border-current flex items-center justify-center group-hover:bg-primary/10">
-                       <MessageSquare className="h-5 w-5" />
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest">Add Note</span>
-                 </button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Live Behaviour Timeline */}
-          <Card className="border-none bg-black/10 backdrop-blur-md ring-1 ring-white/5 h-48 overflow-hidden relative">
-            <CardHeader className="py-3 bg-white/5 border-b border-white/5 flex flex-row items-center justify-between">
-               <CardTitle className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
-                  <Activity size={12} className="text-primary" />
-                  Real-time Behaviour Log
-               </CardTitle>
-               <span className="text-[8px] font-mono text-slate-500">Auto-updating Events</span>
-            </CardHeader>
-            <div className="p-4 space-y-2 overflow-y-auto h-[140px] font-mono text-[10px] text-slate-300">
-               {eventLog.map((log, i) => (
-                 <div key={i} className="flex gap-3 border-l border-primary/20 pl-3 py-1">
-                    <span className="text-primary opacity-50">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-                    <span>{log}</span>
-                 </div>
-               ))}
-               <div ref={logEndRef} />
-            </div>
-            {/* Fade effect at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-          </Card>
-        </div>
-
-        {/* Right: AI Analysis Hub */}
-        <div className="xl:col-span-5 space-y-8">
-           <CameraAnalyzer onScoreUpdate={handleScoreUpdate} onEventLog={addLog} demoMode={true} />
-           
-           {/* Smart Scoring Visualization */}
-           <Card className="border-none bg-background/40 backdrop-blur-md shadow-2xl ring-1 ring-white/10">
-              <CardHeader>
-                 <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-                    <Brain className="h-6 w-6 text-primary" />
-                    Intent Intelligence Hub
-                 </CardTitle>
-                 <CardDescription>Multi-dimensional analysis of the participant's reaction.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                 <ScoreMetric label="Verbal Sentiment" score={scores.verbal} icon={<MessageSquare size={14}/>} color="bg-primary" />
-                 <ScoreMetric label="Behaviour Interest" score={scores.behaviour} icon={<Activity size={14}/>} color="bg-green-500" />
-                 
-                 <div className="pt-6 border-t border-white/5">
-                    <div className="flex items-end justify-between mb-4">
-                       <div>
-                          <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Composite Interest Score</div>
-                          <div className="text-5xl font-black tracking-tighter text-foreground line-clamp-1">{scores.total.toFixed(1)}<span className="text-sm opacity-30 font-normal">/10.0</span></div>
-                       </div>
-                       <div className="text-right">
-                          <CheckCircle2 className={`h-8 w-8 mb-2 ml-auto ${scores.total > 5 ? 'text-primary' : 'text-slate-400'}`} />
-                          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Live Prediction</div>
-                       </div>
-                    </div>
-                    {/* Glowing Total Score Bar */}
-                    <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
-                       <motion.div 
-                         initial={{ width: 0 }}
-                         animate={{ width: `${scores.total * 10}%` }}
-                         className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                       />
-                    </div>
-                 </div>
-              </CardContent>
-           </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScoreMetric({ label, score, icon, color }: { label: string, score: number, icon: React.ReactNode, color: string }) {
-  return (
-    <div className="space-y-3">
-       <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-             {icon}
-             {label}
+            </Card>
           </div>
-          <span className="text-xs font-mono font-bold text-foreground">{(score * 10).toFixed(0)}%</span>
-       </div>
-       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-          <motion.div 
-             initial={{ width: 0 }}
-             animate={{ width: `${score * 10}%` }}
-             className={`h-full ${color} shadow-[0_0_10px_rgba(255,255,255,0.1)]`}
-          />
-       </div>
+
+          {/* RIGHT */}
+          <div className="xl:col-span-5 space-y-6">
+            <CameraAnalyzer onScoreUpdate={handleScoreUpdate} onEventLog={addEvent} demoMode />
+            <Card className="border-none bg-background/40 backdrop-blur-md shadow-xl ring-1 ring-white/10">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-primary" />Intelligence Hub</CardTitle>
+                <CardDescription>Live behaviour score tracker.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    <span className="flex items-center gap-1"><Activity size={10} />Behaviour Score</span>
+                    <span className="font-mono text-foreground">{(behaviourScore * 10).toFixed(0)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div animate={{ width: `${behaviourScore * 10}%` }} className="h-full bg-green-500" />
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-white/5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Live Score</div>
+                  <div className="text-5xl font-black tracking-tighter">{behaviourScore.toFixed(1)}<span className="text-sm opacity-30 font-normal">/10</span></div>
+                  <div className="mt-3 h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                    <motion.div animate={{ width: `${behaviourScore * 10}%` }} className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                  </div>
+                </div>
+                {phase === "active" && (
+                  <Button onClick={handleEnd} variant="destructive" className="w-full gap-2 font-bold">
+                    <StopCircle className="h-4 w-4" />End & Generate Report
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

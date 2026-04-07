@@ -80,4 +80,35 @@ const Toolkit = mongoose.models.Toolkit || mongoose.model<IToolkit>("Toolkit", T
 const Session = mongoose.models.Session || mongoose.model<ISession>("Session", SessionSchema);
 const Answer = mongoose.models.Answer || mongoose.model<IAnswer>("Answer", AnswerSchema);
 
-export { Product, Toolkit, Session, Answer };
+// --- SESSION REPORT ---
+export interface ISessionReport extends Document {
+  sessionId: mongoose.Types.ObjectId;
+  transcript: string;
+  behaviourEvents: string[];
+  behaviourScore: number;
+  verbalScore: number;
+  overallScore: number;
+  visitorType: "Buyer" | "Interested" | "Browsing";
+  summary: string;
+  keywords: string[];
+  interactionDuration: number;
+  createdAt: Date;
+}
+
+const SessionReportSchema = new Schema<ISessionReport>({
+  sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: true },
+  transcript: { type: String, default: "" },
+  behaviourEvents: { type: [String], default: [] },
+  behaviourScore: { type: Number, default: 0 },
+  verbalScore: { type: Number, default: 0 },
+  overallScore: { type: Number, default: 0 },
+  visitorType: { type: String, enum: ["Buyer", "Interested", "Browsing"], default: "Browsing" },
+  summary: { type: String, default: "" },
+  keywords: { type: [String], default: [] },
+  interactionDuration: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const SessionReport = mongoose.models.SessionReport || mongoose.model<ISessionReport>("SessionReport", SessionReportSchema);
+
+export { Product, Toolkit, Session, Answer, SessionReport };

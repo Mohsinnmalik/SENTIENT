@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Play, LayoutGrid, CheckCircle, Info, Sparkles, AlertCircle, Quote, Loader2 } from "lucide-react";
@@ -21,7 +21,8 @@ type ProductData = {
   type: string;
 };
 
-export default function ToolkitPage({ params }: { params: { id: string } }) {
+export default function ToolkitPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [data, setData] = useState<any>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const [isStartingSession, setIsStartingSession] = useState(false);
@@ -31,7 +32,7 @@ export default function ToolkitPage({ params }: { params: { id: string } }) {
     setHasMounted(true);
     const fetchToolkit = async () => {
       try {
-        const res = await fetch(`/api/toolkit/${params.id}`);
+        const res = await fetch(`/api/toolkit/${id}`);
         if (!res.ok) throw new Error("Toolkit not found");
         const json = await res.json();
         setData(json);
@@ -41,7 +42,7 @@ export default function ToolkitPage({ params }: { params: { id: string } }) {
       }
     };
     fetchToolkit();
-  }, [params.id]);
+  }, [id]);
 
   const handleStartSession = async () => {
     if (!data) return;
