@@ -123,8 +123,24 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: 
+      radial-gradient(at 0% 0%, oklch(0.922 0 0 / 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.922 0 0 / 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50 shadow-2xl;
+  }
+  .glass-primary {
+    @apply bg-primary/10 backdrop-blur-xl border border-primary/20 shadow-xl;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent;
   }
 }
