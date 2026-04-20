@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const jetbrainsMono = JetBrains_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 import { Navbar } from "@/components/navbar";
+import { NeuralSensorPortal } from "@/components/neural-sensor-portal";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
@@ -28,17 +29,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
       <body 
-        className="min-h-full flex flex-col bg-background selection:bg-primary/10 selection:text-primary"
+        className="min-h-full flex flex-col bg-[#04060f] text-slate-200 selection:bg-primary/30 font-sans"
         suppressHydrationWarning
       >
         <Navbar />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-16">
+        <main className="flex-1 w-full">
           {children}
         </main>
+        <NeuralSensorPortal />
         <Toaster position="top-right" richColors />
       </body>
     </html>

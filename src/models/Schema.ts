@@ -1,7 +1,23 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+// --- USER ---
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password?: string;
+  createdAt: Date;
+}
+
+const UserSchema = new Schema<IUser>({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 // --- PRODUCT ---
 export interface IProduct extends Document {
+  userId: mongoose.Types.ObjectId;
   name: string;
   type: string;
   description: string;
@@ -13,6 +29,7 @@ export interface IProduct extends Document {
 }
 
 const ProductSchema = new Schema<IProduct>({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   name: { type: String, required: true },
   type: { type: String, required: true },
   description: { type: String, required: true },
@@ -25,6 +42,7 @@ const ProductSchema = new Schema<IProduct>({
 
 // --- TOOLKIT ---
 export interface IToolkit extends Document {
+  userId: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   reviewQuestions: string[];
   qualifierQuestions: string[];
@@ -33,6 +51,7 @@ export interface IToolkit extends Document {
 }
 
 const ToolkitSchema = new Schema<IToolkit>({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   reviewQuestions: { type: [String], default: [] },
   qualifierQuestions: { type: [String], default: [] },
@@ -42,6 +61,7 @@ const ToolkitSchema = new Schema<IToolkit>({
 
 // --- SESSION ---
 export interface ISession extends Document {
+  userId: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   startedAt: Date;
   endedAt?: Date;
@@ -49,6 +69,7 @@ export interface ISession extends Document {
 }
 
 const SessionSchema = new Schema<ISession>({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   startedAt: { type: Date, default: Date.now },
   endedAt: { type: Date },
@@ -57,6 +78,7 @@ const SessionSchema = new Schema<ISession>({
 
 // --- ANSWER ---
 export interface IAnswer extends Document {
+  userId: mongoose.Types.ObjectId;
   sessionId: mongoose.Types.ObjectId;
   question: string;
   answer: string;
@@ -66,6 +88,7 @@ export interface IAnswer extends Document {
 }
 
 const AnswerSchema = new Schema<IAnswer>({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: true },
   question: { type: String, required: true },
   answer: { type: String, required: true },
@@ -75,6 +98,7 @@ const AnswerSchema = new Schema<IAnswer>({
 });
 
 // Avoid model recompilation errors in Next.js dev environment
+const User = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 const Product = mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
 const Toolkit = mongoose.models.Toolkit || mongoose.model<IToolkit>("Toolkit", ToolkitSchema);
 const Session = mongoose.models.Session || mongoose.model<ISession>("Session", SessionSchema);
@@ -82,7 +106,9 @@ const Answer = mongoose.models.Answer || mongoose.model<IAnswer>("Answer", Answe
 
 // --- SESSION REPORT ---
 export interface ISessionReport extends Document {
+  userId: mongoose.Types.ObjectId;
   sessionId: mongoose.Types.ObjectId;
+  productId: mongoose.Types.ObjectId;
   transcript: string;
   behaviourEvents: string[];
   behaviourScore: number;
@@ -92,11 +118,16 @@ export interface ISessionReport extends Document {
   summary: string;
   keywords: string[];
   interactionDuration: number;
+  isDemo: boolean;
+  confidenceLevel: "High" | "Medium" | "Low";
+  keySignals: string[];
   createdAt: Date;
 }
 
 const SessionReportSchema = new Schema<ISessionReport>({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: true },
+  productId: { type: Schema.Types.ObjectId, ref: "Product", required: true, index: true },
   transcript: { type: String, default: "" },
   behaviourEvents: { type: [String], default: [] },
   behaviourScore: { type: Number, default: 0 },
@@ -106,9 +137,12 @@ const SessionReportSchema = new Schema<ISessionReport>({
   summary: { type: String, default: "" },
   keywords: { type: [String], default: [] },
   interactionDuration: { type: Number, default: 0 },
+  isDemo: { type: Boolean, default: false },
+  confidenceLevel: { type: String, enum: ["High", "Medium", "Low"], default: "Medium" },
+  keySignals: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
 });
 
 const SessionReport = mongoose.models.SessionReport || mongoose.model<ISessionReport>("SessionReport", SessionReportSchema);
 
-export { Product, Toolkit, Session, Answer, SessionReport };
+export { User, Product, Toolkit, Session, Answer, SessionReport };

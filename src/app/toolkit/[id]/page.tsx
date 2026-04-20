@@ -2,24 +2,12 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, Play, LayoutGrid, CheckCircle, Info, Sparkles, AlertCircle, Quote, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Play, TerminalSquare, AlertCircle, Quote, Loader2, Cpu, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-type AIResponse = {
-  review_questions: string[];
-  qualifier_questions: string[];
-  scoring_criteria: string;
-};
-
-type ProductData = {
-  name: string;
-  type: string;
-};
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 
 export default function ToolkitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,13 +20,16 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
     setHasMounted(true);
     const fetchToolkit = async () => {
       try {
-        const res = await fetch(`/api/toolkit/${id}`);
-        if (!res.ok) throw new Error("Toolkit not found");
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
+        const token = localStorage.getItem("sentient_token") || "";
+        const res = await fetch(`/api/toolkit/${id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.success) setData(result.data);
+        else throw new Error(result.message || "Toolkit not found");
+      } catch (err: any) {
         console.error(err);
-        toast.error("Failed to load toolkit");
+        toast.error(err.message || "Toolkit not found or unauthorized");
       }
     };
     fetchToolkit();
@@ -47,25 +38,23 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
   const handleStartSession = async () => {
     if (!data) return;
     setIsStartingSession(true);
-    
     try {
+      const token = localStorage.getItem("sentient_token") || "";
       const res = await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "start",
-          productId: data.productId._id
-        }),
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({ action: "start", productId: data.productId._id }),
       });
-      
-      if (!res.ok) throw new Error("Failed to start session");
-      const session = await res.json();
-      
-      toast.success("Live Session Initiated!");
-      router.push(`/session/${session._id}`);
-    } catch (err) {
+      const sessionResult = await res.json();
+      if (!sessionResult.success) throw new Error(sessionResult.message || "Failed to initiate node");
+      toast.success("Connection Established. Entering Live Session.");
+      router.push(`/session/${sessionResult.data._id}`);
+    } catch (err: any) {
       console.error(err);
-      toast.error("Could not start session");
+      toast.error(err.message || "System error. Node initialization failed.");
     } finally {
       setIsStartingSession(false);
     }
@@ -75,153 +64,144 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Loading intelligent toolkit...</p>
+      <div className="min-h-screen bg-[#04060f] flex flex-col items-center justify-center space-y-6">
+         <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+         </div>
+         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 animate-pulse">Decrypting Toolkit Core...</p>
       </div>
     );
   }
 
   const { productId: product, reviewQuestions, qualifierQuestions, scoringCriteria } = data;
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, x: -20 },
-    show: { opacity: 1, x: 0 }
-  };
+  const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+  const item = { hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="pl-0 hover:bg-transparent hover:text-primary group">
-              <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold tracking-tight">{product.name}</h1>
-              <Badge variant="secondary" className="px-3 py-1 bg-secondary/50 border border-secondary text-base font-medium">
-                {product.type}
-              </Badge>
-            </div>
-            <p className="text-xl text-muted-foreground flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              AI-Generated Interaction Toolkit
-            </p>
-          </div>
-        </div>
-        <Button 
-          onClick={handleStartSession}
-          disabled={isStartingSession}
-          className="h-14 px-8 text-lg font-bold gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          {isStartingSession ? <Loader2 className="h-6 w-6 animate-spin" /> : <Play className="h-6 w-6" />}
-          Start Live Session
-        </Button>
+    <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans pb-24">
+       {/* Background */}
+       <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-[700px] h-[700px] bg-primary/5 blur-[150px] rounded-full mix-blend-screen" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_0%,rgba(99,102,241,0.05),transparent)] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
       </div>
 
-      <motion.div 
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-      >
-        {/* Review Questions */}
-        <Card className="lg:col-span-2 border-none bg-background/40 backdrop-blur-sm shadow-xl ring-1 ring-border/50">
-          <CardHeader className="pb-6 border-b border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                   <LayoutGrid className="h-6 w-6 text-primary" />
-                   Review Questions
-                </CardTitle>
-                <CardDescription>Core questions to ask during product testing.</CardDescription>
-              </div>
-              <Badge className="bg-primary/10 text-primary border-primary/20">5 Questions</Badge>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-12 relative z-10 space-y-12">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-8">
+          <div className="space-y-6">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="pl-0 hover:bg-transparent text-slate-400 hover:text-white group">
+                <ArrowLeft className="mr-3 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                RETURN TO GRID
+              </Button>
+            </Link>
+            <div>
+               <div className="flex items-center gap-4 mb-3">
+                 <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">{product.name}</h1>
+                 <div className="px-3 py-1 bg-white/5 border border-white/10 rounded uppercase text-[10px] font-black tracking-[0.2em] text-slate-300">
+                   {product.type}
+                 </div>
+               </div>
+               <p className="text-lg text-slate-400 font-medium flex items-center gap-3">
+                 <Cpu className="h-5 w-5 text-primary" /> Active Neural Array
+               </p>
             </div>
-          </CardHeader>
-          <CardContent className="pt-8 space-y-6">
-            {reviewQuestions.map((q: string, i: number) => (
-              <motion.div 
-                key={i} 
-                variants={item}
-                className="group flex gap-5 p-5 rounded-2xl bg-secondary/30 border border-secondary transition-all hover:bg-secondary/50 hover:border-primary/20"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-                  {i + 1}
-                </div>
-                <p className="text-lg font-medium leading-relaxed pt-1 group-hover:text-foreground">
-                  "{q}"
-                </p>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Sidebar Sections */}
-        <div className="space-y-8">
-          {/* Qualifier Questions */}
-          <Card className="border-none bg-background/40 backdrop-blur-sm shadow-xl ring-1 ring-border/50">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                Qualifiers
-              </CardTitle>
-              <CardDescription>Filtering high-intent users.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {qualifierQuestions.map((q: string, i: number) => (
-                <div key={i} className="text-sm p-4 rounded-xl bg-green-500/5 border border-green-500/10 text-foreground/80 italic font-medium">
-                  {q}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Scoring Criteria */}
-          <Card className="border-none bg-primary text-primary-foreground shadow-2xl shadow-primary/30 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 h-24 w-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors" />
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold flex items-center gap-3">
-                <AlertCircle className="h-5 w-5" />
-                Scoring Logic
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 relative z-10">
-              <div className="p-4 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
-                <p className="text-sm leading-relaxed font-medium">
-                  {scoringCriteria}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs opacity-80 bg-black/10 p-3 rounded-lg">
-                <Info className="h-4 w-4 shrink-0" />
-                This logic will be used to automatically score responses during the live session.
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Action Note */}
-          <div className="p-6 rounded-3xl bg-amber-500/10 border-2 border-dashed border-amber-500/20 text-center">
-            <Quote className="h-6 w-6 text-amber-500 mx-auto mb-3" />
-            <p className="text-xs text-amber-600 font-medium">
-              These questions are generated to minimize bias and maximize actionable feedback.
-            </p>
           </div>
+          
+          <Button 
+            onClick={handleStartSession} disabled={isStartingSession}
+            className="h-16 px-10 rounded-[2rem] bg-gradient-to-r from-primary to-indigo-600 hover:from-primary text-lg font-black tracking-widest uppercase text-white shadow-[0_0_40px_rgba(99,102,241,0.2)] transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+          >
+            {isStartingSession ? (
+              <span className="flex items-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ESTABLISHING LINK...</span>
+            ) : (
+              <span className="flex items-center gap-3"><Play className="h-6 w-6 fill-current" /> LAUNCH INTERFACE</span>
+            )}
+          </Button>
         </div>
-      </motion.div>
+
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Main Matrix (8 cols) */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
+              
+              <div className="p-10 border-b border-white/[0.03] flex items-center justify-between">
+                <div>
+                   <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-2">
+                     <TerminalSquare className="h-6 w-6 text-primary" /> Interrogation Matrix
+                   </h2>
+                   <p className="text-slate-500 text-sm font-medium">Core neural questions primed for the live session.</p>
+                </div>
+                <div className="h-14 w-14 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center">
+                  <span className="text-xl font-black text-white leading-none">{reviewQuestions.length}</span>
+                  <span className="text-[8px] font-black tracking-widest uppercase text-slate-500">Nodes</span>
+                </div>
+              </div>
+
+              <div className="p-10 space-y-6">
+                {reviewQuestions.map((q: string, i: number) => (
+                  <motion.div key={i} variants={item} className="group flex gap-6 p-6 rounded-3xl bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300">
+                     <div className="h-12 w-12 shrink-0 rounded-full bg-[#04060f] border border-white/10 flex items-center justify-center text-primary font-black shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]">
+                       0{i + 1}
+                     </div>
+                     <p className="text-lg md:text-xl font-medium leading-normal text-slate-300 group-hover:text-white pt-2">
+                       "{q}"
+                     </p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Neural Supplements (4 cols) */}
+          <div className="lg:col-span-4 space-y-8">
+            
+            {/* Qualifier Block */}
+            <div className="bg-white/[0.01] border border-white/[0.03] rounded-[2rem] p-8">
+              <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6">
+                <CheckSquare className="h-5 w-5 text-green-400" /> Filter Criteria
+              </h3>
+              <div className="space-y-4">
+                {qualifierQuestions.map((q: string, i: number) => (
+                  <div key={i} className="text-sm p-5 rounded-2xl bg-green-500/5 border border-green-500/10 text-green-100/70 font-medium">
+                    {q}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Logic Block */}
+            <div className="bg-primary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+               <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6 relative z-10">
+                 <AlertCircle className="h-5 w-5 text-primary" /> Evaluation Logic
+               </h3>
+               <div className="p-5 rounded-2xl bg-[#04060f]/50 border border-white/5 backdrop-blur-md relative z-10 mb-4">
+                 <p className="text-sm leading-relaxed font-semibold text-primary-100 font-mono tracking-tight text-white/80">
+                   {scoringCriteria}
+                 </p>
+               </div>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 relative z-10">
+                 System logic actively parsing during interaction.
+               </p>
+            </div>
+
+             {/* Safety Notice */}
+            <div className="p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] flex items-start gap-4">
+               <Quote className="h-6 w-6 text-slate-500 shrink-0 mt-1" />
+               <p className="text-xs font-semibold text-slate-400 leading-relaxed uppercase tracking-wider">
+                 All neural nodes are pre-compiled for minimal bias. Proceed to launch interface when subject is ready.
+               </p>
+            </div>
+
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
-

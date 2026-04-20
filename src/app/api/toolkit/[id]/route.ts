@@ -1,35 +1,47 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import { Toolkit } from "@/models/Schema";
+import { getAuthUser, jsonResponse } from "@/lib/auth";
 
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getAuthUser(req);
+    if (!user) return jsonResponse(false, "Unauthorized", null, 401);
+
     await dbConnect();
     const { id } = await params;
-    
-    console.log("[API] Fetching toolkit with id:", id);
 
     if (id === "latest") {
-      const toolkit = await Toolkit.findOne().sort({ createdAt: -1 }).populate("productId");
-      if (!toolkit) {
-        return NextResponse.json({ error: "No toolkits found" }, { status: 404 });
-      }
-      return NextResponse.json(toolkit);
+      const toolkit = await Toolkit.findOne({ userId: user.userId }).sort({ createdAt: -1 }).populate("productId");
+      if (!toolkit) return jsonResponse(false, "No toolkits found", null, 404);
+      return jsonResponse(true, "Latest toolkit fetched", toolkit, 200);
     }
 
-    const toolkit = await Toolkit.findById(id).populate("productId");
+    let toolkit = null;
     
-    if (!toolkit) {
-      console.error("[API] Toolkit not found for id:", id);
-      return NextResponse.json({ error: "Toolkit not found" }, { status: 404 });
+    // Try to find by Toolkit ID matching userId
+    try {
+      toolkit = await Toolkit.findOne({ _id: id, userId: user.userId }).populate("productId");
+    } catch {
+      // Ignore
     }
+
+    // Try to find by Product ID matching userId
+    if (!toolkit) {
+      try {
+        toolkit = await Toolkit.findOne({ productId: id, userId: user.userId }).populate("productId");
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!toolkit) return jsonResponse(false, "Toolkit not found or unauthorized", null, 404);
     
-    return NextResponse.json(toolkit);
+    return jsonResponse(true, "Toolkit fetched successfully", toolkit, 200);
   } catch (error: any) {
-    console.error("[API] Error fetching toolkit:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonResponse(false, "Internal Error", error.message, 500);
   }
 }

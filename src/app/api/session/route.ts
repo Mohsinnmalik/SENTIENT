@@ -1,70 +1,93 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import dbConnect from "@/lib/db";
-import { Session, Answer, Toolkit } from "@/models/Schema";
+import { Session, Answer, Toolkit, Product } from "@/models/Schema";
+import { getAuthUser, jsonResponse } from "@/lib/auth";
 
-// Get Session Details
-export async function GET(req: Request) {
+// 1. GET SESSION DETAILS
+export async function GET(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
+    if (!user) return jsonResponse(false, "Unauthorized", null, 401);
+
     await dbConnect();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     
-    if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    if (!id) return jsonResponse(false, "ID is required", null, 400);
 
-    const session = await Session.findById(id).populate("productId");
-    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    const session = await Session.findOne({ _id: id, userId: user.userId }).populate("productId");
+    if (!session) return jsonResponse(false, "Session not found or unauthorized", null, 404);
 
-    const toolkit = await Toolkit.findOne({ productId: session.productId._id });
+    const toolkit = await Toolkit.findOne({ productId: session.productId._id, userId: user.userId });
     
-    return NextResponse.json({ session, toolkit });
+    return jsonResponse(true, "Session details fetched", { session, toolkit });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonResponse(false, "Internal Error", error.message, 500);
   }
 }
 
-// Handle Session Actions
-export async function POST(req: Request) {
+// 2. HANDLE SESSION ACTIONS (START, ANSWER, END)
+export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
+    if (!user) return jsonResponse(false, "Unauthorized", null, 401);
+
     await dbConnect();
-    const { action, productId, sessionId, question, answer, score } = await req.json();
-    
-    // 1. START SESSION
+    const body = await req.json();
+    const { action, productId, sessionId, question, answer, score } = body;
+
+    // START SESSION
     if (action === "start") {
-      const session = await Session.create({ productId, status: "active" });
-      return NextResponse.json(session, { status: 201 });
+      if (!productId) return jsonResponse(false, "productId required for start", null, 400);
+      
+      // Verify product belongs to user
+      const product = await Product.findOne({ _id: productId, userId: user.userId });
+      if (!product) return jsonResponse(false, "Product not found", null, 404);
+      
+      const session = await Session.create({ userId: user.userId, productId, status: "active" });
+      return jsonResponse(true, "Session started", session, 201);
     }
 
-    // 2. SAVE ANSWER
+    // SAVE ANSWER
     if (action === "answer") {
-      // Mock Behavioral Signal Logic
+      if (!sessionId || !question || !answer) return jsonResponse(false, "Missing fields for answer", null, 400);
+      
+      const session = await Session.findOne({ _id: sessionId, userId: user.userId });
+      if (!session) return jsonResponse(false, "Unauthorized session", null, 403);
+
       const signals = ["High Intent 🔥", "Neutral", "Low Interest ⚠️"];
       const randomSignal = signals[Math.floor(Math.random() * signals.length)];
       
       const newAnswer = await Answer.create({
+        userId: user.userId,
         sessionId,
         question,
         answer,
-        score: score || Math.floor(Math.random() * 10),
+        score: score || 5,
         signal: randomSignal,
       });
-      return NextResponse.json(newAnswer, { status: 201 });
+      return jsonResponse(true, "Answer saved", newAnswer, 201);
     }
 
-    // 3. END SESSION
+    // END SESSION
     if (action === "end") {
-      const session = await Session.findByIdAndUpdate(sessionId, { 
-        status: "completed",
-        endedAt: new Date()
-      }, { new: true });
+      if (!sessionId) return jsonResponse(false, "sessionId required for end", null, 400);
+
+      const session = await Session.findOneAndUpdate(
+        { _id: sessionId, userId: user.userId }, 
+        { status: "completed", endedAt: new Date() }, 
+        { new: true }
+      );
       
-      const answers = await Answer.find({ sessionId });
+      if (!session) return jsonResponse(false, "Session not found or unauthorized", null, 404);
+
+      const answers = await Answer.find({ sessionId, userId: user.userId });
       
-      return NextResponse.json({ session, report: answers }, { status: 200 });
+      return jsonResponse(true, "Session completed", { session, report: answers });
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return jsonResponse(false, "Invalid action", null, 400);
   } catch (error: any) {
-    console.error("Session error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonResponse(false, "Internal Error", error.message, 500);
   }
 }

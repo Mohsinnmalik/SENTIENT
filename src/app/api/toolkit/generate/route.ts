@@ -1,17 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import { Toolkit } from "@/models/Schema";
+import { Toolkit, Product } from "@/models/Schema";
+import { getAuthUser, jsonResponse } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const user = await getAuthUser(req);
+    if (!user) return jsonResponse(false, "Unauthorized", null, 401);
+
     await dbConnect();
     const { productId } = await req.json();
     
     if (!productId) {
-      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
+      return jsonResponse(false, "Product ID is required", null, 400);
     }
 
-    // Mock AI Questions
+    // Verify product belongs to user
+    const product = await Product.findOne({ _id: productId, userId: user.userId });
+    if (!product) {
+      return jsonResponse(false, "Product not found or unauthorized", null, 403);
+    }
+
+    // Mock AI Questions - In a real production app, these would come from an LLM call
     const reviewQuestions = [
       "How would you describe the overall build quality of this product?",
       "Which specific feature stood out to you the most during your initial use?",
@@ -29,15 +39,15 @@ export async function POST(req: Request) {
     const scoringCriteria = "Scoring is determined by the depth of verbal feedback (40%) and interaction-based behavioural signals (60%).";
 
     const toolkit = await Toolkit.create({
+      userId: user.userId,
       productId,
       reviewQuestions,
       qualifierQuestions,
       scoringCriteria,
     });
     
-    return NextResponse.json(toolkit, { status: 201 });
+    return jsonResponse(true, "Toolkit generated successfully", toolkit, 201);
   } catch (error: any) {
-    console.error("Error generating toolkit:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonResponse(false, "Internal Error", error.message, 500);
   }
 }
