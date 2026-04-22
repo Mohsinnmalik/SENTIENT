@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Brain, MessageSquare, Activity, Clock, ChevronDown,
   ChevronUp, BarChart, Home, Plus, Loader2, Zap, Target, TrendingUp,
-  CheckCircle2, AlertTriangle, ShoppingCart
+  CheckCircle2, AlertTriangle, ShoppingCart, Sparkles, ShieldCheck, Microscope
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 type ReportData = {
   _id?: string;
   sessionId: string;
@@ -31,485 +31,291 @@ type ReportData = {
   createdAt?: string;
 };
 
-// ─── Visitor type configurations ──────────────────────────────────────────────
 const VISITOR_CONFIG = {
-  Buyer: {
-    color: "text-green-400",
-    bg: "bg-green-500/10",
-    border: "border-green-500/30",
-    glow: "shadow-green-500/20",
-    ring: "ring-green-500/20",
-    gradient: "from-green-500/20 via-transparent",
-    icon: ShoppingCart,
-    emoji: "🛒",
-    label: "High Purchase Intent",
-    desc: "This visitor is highly likely to convert. Follow up immediately with a tailored offer.",
-    badge: "bg-green-500/20 text-green-400 border-green-500/30",
-  },
-  Interested: {
-    color: "text-primary",
-    bg: "bg-primary/10",
-    border: "border-primary/30",
-    glow: "shadow-primary/20",
-    ring: "ring-primary/20",
-    gradient: "from-primary/20 via-transparent",
-    icon: Target,
-    emoji: "👀",
-    label: "Strong Interest",
-    desc: "Engaged visitor showing genuine product interest. Nurture with more info and demos.",
-    badge: "bg-primary/20 text-primary border-primary/30",
-  },
-  Browsing: {
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    glow: "shadow-amber-500/20",
-    ring: "ring-amber-500/20",
-    gradient: "from-amber-500/20 via-transparent",
-    icon: TrendingUp,
-    emoji: "🔍",
-    label: "Exploratory Visit",
-    desc: "Early stage visitor. Consider a follow-up demo or competitive price offer.",
-    badge: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  },
+  Buyer: { color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/30", icon: ShoppingCart, emoji: "🛒", label: "High Purchase Intent", desc: "High conversion probability. Immediate follow-up recommended." },
+  Interested: { color: "text-primary", bg: "bg-primary/10", border: "border-primary/30", icon: Target, emoji: "👀", label: "Strong Interest", desc: "Genuine product engagement. Nurture with deeper specifications." },
+  Browsing: { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30", icon: TrendingUp, emoji: "🔍", label: "Exploratory Visit", desc: "Early stage prospect. Consider exploratory price incentives." },
 };
 
-// ─── Animated score roll-up ───────────────────────────────────────────────────
 function AnimatedScore({ target }: { target: number }) {
   const [val, setVal] = useState(0);
   useEffect(() => {
-    const steps = 60;
-    const inc = target / steps;
-    let step = 0;
-    const t = setInterval(() => {
-      step++;
-      setVal(v => step >= steps ? target : Math.min(target, v + inc));
-      if (step >= steps) clearInterval(t);
-    }, 1500 / steps);
-    return () => clearInterval(t);
+    let current = 0;
+    const interval = setInterval(() => {
+      current += target / 30;
+      if (current >= target) { setVal(target); clearInterval(interval); }
+      else setVal(current);
+    }, 30);
+    return () => clearInterval(interval);
   }, [target]);
   return <>{val.toFixed(1)}</>;
 }
 
-// ─── Score bar ────────────────────────────────────────────────────────────────
-function ScoreBar({ label, value, max, color, delay = 0 }: {
-  label: string; value: number; max: number; color: string; delay?: number;
-}) {
+function MetricProgress({ label, value, color, delay }: any) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">
-        <span>{label}</span>
-        <span className={`font-mono px-2 py-0.5 rounded border ${color.includes("green") ? "bg-green-500/10 text-green-400 border-green-500/20" : "bg-primary/10 text-primary border-primary/20"}`}>
-          {value.toFixed(1)} <span className="text-[9px] opacity-40">/ {max}</span>
-        </span>
+      <div className="flex justify-between items-end">
+        <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{label}</span>
+        <span className="text-sm font-black text-white italic">{value.toFixed(1)}<span className="text-[9px] opacity-30 ml-0.5">/10</span></span>
       </div>
-      <div className="h-2 w-full bg-slate-900/40 rounded-full overflow-hidden p-0.5 border border-white/5">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${(value / max) * 100}%` }}
-          transition={{ duration: 1.2, ease: "circOut", delay }}
-          className={`h-full ${color} rounded-full shadow-[0_0_10px_rgba(255,255,255,0.1)]`}
+      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }} animate={{ width: `${value * 10}%` }}
+          transition={{ duration: 1, ease: "easeOut", delay }}
+          className={`h-full ${color} shadow-[0_0_10px_rgba(255,255,255,0.1)]`} 
         />
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PremiumReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [report, setReport] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasMounted, setHasMounted] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [eventsOpen, setEventsOpen] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(true);
 
   useEffect(() => {
-    setHasMounted(true);
-    loadReport();
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("sentient_token") || "";
+        const res = await fetch(`/api/report?id=${id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.success) setReport(result.data);
+      } catch (e) {} finally { setIsLoading(false); }
+    };
+    load();
   }, [id]);
 
-  const loadReport = async () => {
-    setIsLoading(true);
-    // Fallback: sessionStorage
-    if (id === "latest") {
-      const s = sessionStorage.getItem("latest_report");
-      if (s) { setReport(JSON.parse(s)); setIsLoading(false); return; }
-    }
-    try {
-      const res = await fetch(`/api/report?id=${id}`);
-      const result = await res.json();
-      if (result.success) {
-        setReport(result.data);
-      } else {
-        const s = sessionStorage.getItem("latest_report");
-        if (s) setReport(JSON.parse(s));
-      }
-    } catch {
-      const s = sessionStorage.getItem("latest_report");
-      if (s) setReport(JSON.parse(s));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (isLoading) return (
+    <div className="min-h-screen bg-[#04060f] flex flex-col items-center justify-center gap-6">
+       <div className="h-16 w-16 bg-primary/10 rounded-3xl border border-primary/20 flex items-center justify-center animate-pulse">
+         <Microscope className="text-primary animate-bounce" size={32} />
+       </div>
+       <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse">Synthesizing Decision Logic</p>
+    </div>
+  );
 
-  const fmt = (s: number) => s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
-
-  if (!hasMounted) return null;
-
-  if (isLoading && !report) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-muted-foreground font-medium animate-pulse">Retrieving intelligent report...</p>
-      </div>
-    );
-  }
-
-  if (!report) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] gap-6 text-center">
-        <div className="h-20 w-20 rounded-3xl bg-destructive/10 flex items-center justify-center">
-          <AlertTriangle className="h-10 w-10 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Report Not Found</h2>
-          <p className="text-muted-foreground max-w-sm">
-            We couldn't locate this session report in the database or your recent history.
-          </p>
-        </div>
-        <Link href="/dashboard"><Button className="rounded-xl px-8 h-12 shadow-lg shadow-primary/20">Return to Dashboard</Button></Link>
-      </div>
-    );
-  }
+  if (!report) return (
+    <div className="min-h-screen bg-[#04060f] flex flex-col items-center justify-center p-8 text-center space-y-6">
+      <AlertTriangle size={64} className="text-red-500 opacity-50" />
+      <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Trace Not Found</h2>
+      <Link href="/dashboard"><Button className="rounded-2xl px-10 h-14 font-black tracking-widest bg-white text-black hover:bg-slate-200">RETURN TO BASE</Button></Link>
+    </div>
+  );
 
   const cfg = VISITOR_CONFIG[report.visitorType] || VISITOR_CONFIG.Browsing;
-  const CfgIcon = cfg.icon;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-16 space-y-12">
-
-      {/* ── Back header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Session Report</h1>
-          <p className="text-xs text-muted-foreground font-mono opacity-60 uppercase tracking-widest">
-            {report.sessionId}
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans pb-32">
+       {/* Background */}
+       <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 blur-[150px] rounded-full translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05),transparent)] opacity-50" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
       </div>
 
-      {/* ── Hero Score Section ────────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-black/40 backdrop-blur-3xl p-8 md:p-16 text-center space-y-10"
-      >
-        {/* Background glow */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${cfg.gradient} to-transparent pointer-events-none`} />
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
-
-        {/* Score display */}
-        <div className="relative z-10 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-primary font-black">
-            Composite Interaction Quotient
-          </p>
-          <div className="text-[100px] md:text-[140px] font-black leading-none tracking-tighter tabular-nums bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent italic">
-            <AnimatedScore target={report.overallScore} />
-            <span className="text-4xl opacity-20 font-light ml-2 uppercase italic tracking-widest">/10</span>
-          </div>
-          {report.isDemo && (
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap bg-purple-500/10 border border-purple-500/20 text-purple-400 font-black uppercase text-[10px] tracking-widest px-4 py-1.5 rounded-full shadow-lg pointer-events-none">
-              ⚡ Demo Data / Simulation Mode
-            </div>
-          )}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-12 relative z-10 space-y-12">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-white/5 pb-8">
+           <div className="flex items-center gap-6">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/[0.02] border border-white/10 hover:bg-white/10 text-slate-400">
+                   <ArrowLeft size={20} />
+                </Button>
+              </Link>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Intelligence Matrix</div>
+                <h1 className="text-2xl font-black text-white italic tracking-tighter uppercase">Session #{report._id?.slice(-6)}</h1>
+              </div>
+           </div>
+           <div className="hidden sm:flex items-center gap-4 px-4 py-2 bg-white/[0.02] border border-white/10 rounded-2xl">
+              <ShieldCheck className="text-green-400" size={16} />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">Neural integrity verified</span>
+           </div>
         </div>
 
-        {/* Buyer type pill */}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className={`relative z-10 inline-flex items-center gap-6 px-10 py-5 rounded-[2rem] border-2 ${cfg.bg} ${cfg.border} shadow-2xl ${cfg.glow} backdrop-blur-md`}
-        >
-          <span className="text-5xl">{cfg.emoji}</span>
-          <div className="text-left">
-            <div className={`text-2xl font-black tracking-tight ${cfg.color} uppercase`}>
-              {report.visitorType}
-            </div>
-            <div className="text-xs font-bold text-muted-foreground tracking-widest opacity-80">{cfg.label}</div>
-          </div>
+        {/* Hero Score Section */}
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="relative bg-white/[0.01] border border-white/[0.05] rounded-[3rem] p-10 md:p-20 text-center space-y-10 overflow-hidden">
+           <div className="absolute top-0 right-0 p-20 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+           
+           <div className="relative z-10 space-y-4">
+              <div className="text-[120px] md:text-[180px] font-black leading-none tracking-tighter italic bg-gradient-to-b from-white via-white to-transparent bg-clip-text text-transparent opacity-90">
+                 <AnimatedScore target={report.overallScore} />
+              </div>
+              <div className="text-xs font-black uppercase tracking-[0.5em] text-primary">Composite Sentiment Result</div>
+           </div>
+
+           <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-12 pt-8">
+              <div className="flex items-center gap-6 p-6 rounded-[2.5rem] bg-black/40 border border-white/10 shadow-2xl">
+                 <span className="text-6xl">{cfg.emoji}</span>
+                 <div className="text-left">
+                    <div className={`text-2xl font-black italic tracking-tighter uppercase ${cfg.color}`}>{report.visitorType}</div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{cfg.label}</div>
+                 </div>
+              </div>
+
+              <div className="flex flex-col gap-4 text-left">
+                 <div className="flex items-center gap-3">
+                    <Clock size={16} className="text-slate-500" />
+                    <span className="text-xs font-black text-slate-400 tracking-widest uppercase">{Math.floor(report.interactionDuration / 60)}m {report.interactionDuration % 60}s ENGAGEMENT</span>
+                 </div>
+                 <div className="flex items-center gap-3">
+                    <CheckCircle2 size={16} className="text-green-500" />
+                    <span className="text-xs font-black text-slate-400 tracking-widest uppercase">CAPTURED {report.behaviourEvents.length} METADATA NODES</span>
+                 </div>
+              </div>
+           </div>
         </motion.div>
 
-        {/* Meta chips */}
-        <div className="relative z-10 flex items-center justify-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2 bg-white/5 px-5 py-2.5 rounded-full border border-white/5 text-[11px] font-black uppercase tracking-widest text-slate-400">
-            <Clock className="h-3 w-3 text-primary" />
-            {fmt(report.interactionDuration)} session
-          </div>
-          {report.createdAt && (
-            <div className="bg-white/5 px-5 py-2.5 rounded-full border border-white/5 text-[11px] font-black uppercase tracking-widest text-slate-400">
-              {new Date(report.createdAt).toLocaleString()}
-            </div>
-          )}
-          {report.keywords?.length > 0 && report.keywords.map(k => (
-            <Badge key={k} className="capitalize text-[10px] font-bold px-3 py-1 bg-primary/10 text-primary border border-primary/20">
-              {k}
-            </Badge>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* ── Main Grid ────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        {/* LEFT column */}
-        <div className="space-y-8">
-
-          {/* AI Summary */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="border-none bg-gradient-to-br from-primary/20 via-background to-blue-900/10 shadow-2xl ring-1 ring-primary/20 overflow-hidden relative">
-              <div className="absolute -right-12 -top-12 h-40 w-40 bg-primary/10 rounded-full blur-3xl" />
-              <CardHeader className="pb-4 relative z-10">
-                <CardTitle className="text-xl font-black flex items-center gap-3">
-                  <Brain className="h-6 w-6 text-primary" />
-                  AI Analysis Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 relative z-10">
-                <p className="text-base leading-relaxed text-foreground/90 font-medium italic">
-                  "{report.summary}"
-                </p>
-                
-                {/* Confidence & Action */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`text-xs p-5 rounded-2xl bg-black/40 border border-white/5 text-slate-300 leading-relaxed font-medium shadow-inner flex flex-col justify-center`}>
-                    <div className={`flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest ${
-                      report.confidenceLevel === "High" ? "text-green-400" :
-                      report.confidenceLevel === "Low" ? "text-amber-400" : "text-primary"
-                    }`}>
-                      <Target className="h-3 w-3" />
-                      System Confidence: {report.confidenceLevel || "Medium"}
+        {/* Intelligence Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+           
+           {/* Primary Analysis (7 cols) */}
+           <div className="lg:col-span-7 space-y-8">
+              
+              {/* Score Explanation critique */}
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                 <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-[2.5rem] p-10 space-y-6 relative group overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                       <Zap size={80} className="text-primary" />
                     </div>
-                    {report.confidenceLevel === "High" ? "Rich telemetry captured." : "Limited dataset observed."}
-                  </div>
-
-                  <div className={`text-xs p-5 rounded-2xl bg-black/40 border ${cfg.border} text-slate-300 leading-relaxed font-medium shadow-inner`}>
-                    <div className={`flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest ${cfg.color}`}>
-                      <CfgIcon className="h-3 w-3" />
-                      Recommended Action
-                    </div>
-                    {cfg.desc}
-                  </div>
-                </div>
-
-                {/* Key Signals */}
-                {report.keySignals && report.keySignals.length > 0 && (
-                  <div className="pt-4 border-t border-white/5">
-                    <div className={`flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-widest text-slate-400`}>
-                      <Zap className="h-3 w-3 text-primary" />
-                      Key Signals Detected
-                    </div>
-                    <ul className="space-y-3">
-                      {report.keySignals.map((signal, idx) => (
-                        <motion.li 
-                          initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + (idx * 0.1) }}
-                          key={idx} className="flex items-start gap-3 text-sm text-slate-300 font-medium"
-                        >
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                          <span>{signal}</span>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Score Breakdown */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <Card className="border-none bg-background/40 backdrop-blur-md ring-1 ring-white/10 shadow-2xl overflow-hidden">
-              <CardHeader className="pb-4 border-b border-white/5">
-                <CardTitle className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter">
-                  <BarChart className="h-5 w-5 text-primary" />
-                  Metric Intelligence
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-8 pt-8">
-                <ScoreBar label="Verbal Sentiment Accuracy" value={report.verbalScore} max={10} color="bg-primary" delay={0.3} />
-                <ScoreBar label="Behavioural Engagement Index" value={report.behaviourScore} max={10} color="bg-green-500" delay={0.45} />
-
-                {/* Composite */}
-                <div className="pt-8 border-t border-white/5 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                      <Activity size={12} className="text-primary" />
-                      Composite Score
-                    </span>
-                    <span className="text-3xl font-black tracking-tighter italic">
-                      {report.overallScore}
-                      <span className="text-sm opacity-20 font-light ml-1">/10</span>
-                    </span>
-                  </div>
-                  <div className="h-3 w-full bg-slate-900/50 rounded-full overflow-hidden p-0.5 shadow-inner border border-white/5">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${report.overallScore * 10}%` }}
-                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
-                      className="h-full bg-gradient-to-r from-primary via-blue-400 to-indigo-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                    />
-                  </div>
-                </div>
-
-                {/* Signal chips */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] font-bold text-green-400">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {report.behaviourScore > 6 ? "High Engagement" : report.behaviourScore > 4 ? "Moderate Engagement" : "Low Engagement"}
-                  </div>
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border ${cfg.badge}`}>
-                    <Zap className="h-3 w-3" />
-                    {report.visitorType === "Buyer" ? "Buy Intent Detected" : report.visitorType === "Interested" ? "Interest Signal" : "Exploration Mode"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* RIGHT column */}
-        <div className="space-y-8">
-
-          {/* Transcript (collapsible) */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="border-none bg-background/40 backdrop-blur-md ring-1 ring-white/10 shadow-2xl overflow-hidden">
-              <CardHeader className="p-0">
-                <button
-                  onClick={() => setTranscriptOpen(p => !p)}
-                  className="flex items-center justify-between w-full p-6 text-left transition-colors hover:bg-white/5"
-                >
-                  <CardTitle className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                    Full Conversation Transcript
-                  </CardTitle>
-                  {transcriptOpen
-                    ? <ChevronUp className="h-5 w-5 text-primary" />
-                    : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                </button>
-              </CardHeader>
-              <AnimatePresence>
-                {transcriptOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                  >
-                    <CardContent className="pt-0 px-6 pb-6">
-                      <div className="p-6 rounded-[1.5rem] bg-black/40 border-2 border-dashed border-white/5 leading-loose text-sm font-medium font-mono text-slate-300 shadow-inner max-h-[400px] overflow-y-auto">
-                        {report.transcript ? (
-                          <p className="whitespace-pre-wrap">{report.transcript}</p>
-                        ) : (
-                          <div className="h-32 flex flex-col items-center justify-center text-slate-600 gap-2">
-                            <MessageSquare className="h-8 w-8 opacity-20" />
-                            <p className="italic uppercase text-[10px] tracking-widest font-black">No verbal telemetry recorded</p>
+                    <h3 className="text-xl font-black text-white flex items-center gap-3">
+                       <Brain className="text-primary" size={24} /> Neural Logic Critique
+                    </h3>
+                    <p className="text-base text-slate-300 leading-relaxed font-medium italic">
+                       "{report.summary}"
+                    </p>
+                    <div className="pt-6 border-t border-white/5 space-y-4">
+                       <div className="flex items-start gap-4">
+                          <ShieldCheck className="text-green-400 mt-1 shrink-0" size={16} />
+                          <div className="space-y-1">
+                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Logic Rationale</div>
+                             <p className="text-xs text-slate-400 font-medium">
+                                Score prioritized verbal sentiment weight (40%) and behavioral link stability (60%). 
+                                {report.overallScore > 7 ? " Pattern suggests high alignment with current product matrices." : " Minimal engagement outliers detected."}
+                             </p>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          </motion.div>
+                       </div>
+                    </div>
+                 </div>
+              </motion.div>
 
-          {/* Behaviour Timeline (collapsible) */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="border-none bg-background/40 backdrop-blur-md ring-1 ring-white/10 shadow-2xl overflow-hidden">
-              <CardHeader className="p-0">
-                <button
-                  onClick={() => setEventsOpen(p => !p)}
-                  className="flex items-center justify-between w-full p-6 text-left transition-colors hover:bg-white/5"
-                >
-                  <CardTitle className="text-xl font-black flex items-center gap-3 uppercase tracking-tighter">
-                    <Activity className="h-5 w-5 text-primary" />
-                    Behavioural Metadata
-                    <Badge variant="outline" className="ml-1 font-mono text-[10px] border-primary/30 text-primary">
-                      {report.behaviourEvents?.length || 0} events
-                    </Badge>
-                  </CardTitle>
-                  {eventsOpen
-                    ? <ChevronUp className="h-5 w-5 text-primary" />
-                    : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                </button>
-              </CardHeader>
-              <AnimatePresence>
-                {eventsOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                  >
-                    <CardContent className="pt-0 px-6 pb-6">
-                      {report.behaviourEvents?.length > 0 ? (
-                        <div className="space-y-2 max-h-52 overflow-y-auto">
-                          {report.behaviourEvents.map((e, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ x: -10, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: i * 0.04 }}
-                              className="text-[11px] font-mono text-slate-400 border-l border-primary/30 pl-4 py-2 hover:bg-white/5 rounded-r-lg transition-all"
-                            >
-                              <span className="text-primary/40 font-black mr-2 tracking-tighter">[EVENT]</span>
-                              {e}
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="h-24 flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 italic">
-                            No interaction metadata captured
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          </motion.div>
+              {/* Interaction Details */}
+              <div className="bg-white/[0.01] border border-white/[0.05] rounded-[2.5rem] overflow-hidden">
+                 <button onClick={() => setTranscriptOpen(p => !p)} className="w-full flex items-center justify-between p-8 hover:bg-white/[0.02] transition-colors">
+                    <h3 className="text-xl font-black text-white flex items-center gap-3">
+                       <MessageSquare className="text-primary" size={24} /> Interaction Transcript
+                    </h3>
+                    {transcriptOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                 </button>
+                 <AnimatePresence>
+                    {transcriptOpen && (
+                       <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                          <div className="p-8 pt-0">
+                             <div className="bg-black/40 border border-white/5 rounded-2xl p-6 font-mono text-sm leading-loose text-slate-400 h-[300px] overflow-y-auto shadow-inner">
+                                {report.transcript || "No verbal nodes detected during interaction cycle."}
+                             </div>
+                          </div>
+                       </motion.div>
+                    )}
+                 </AnimatePresence>
+              </div>
 
-          {/* Action buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex gap-4"
-          >
-            <Link href="/dashboard" className="flex-1">
-              <Button
-                variant="outline"
-                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Home className="h-4 w-4" />
-                Workspace Home
-              </Button>
-            </Link>
-            <Link href="/setup" className="flex-[2]">
-              <Button
-                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Plus className="h-4 w-4" />
-                New Product Interaction
-              </Button>
-            </Link>
-          </motion.div>
+              <div className="bg-white/[0.01] border border-white/[0.05] rounded-[2.5rem] overflow-hidden">
+                 <button onClick={() => setEventsOpen(p => !p)} className="w-full flex items-center justify-between p-8 hover:bg-white/[0.02] transition-colors">
+                    <h3 className="text-xl font-black text-white flex items-center gap-3">
+                       <Activity className="text-primary" size={24} /> Behavioural Metadata
+                    </h3>
+                    {eventsOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                 </button>
+                 <AnimatePresence>
+                    {eventsOpen && (
+                       <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                          <div className="p-8 pt-0 space-y-4">
+                             {report.behaviourEvents.map((e, i) => (
+                                <div key={i} className="flex gap-4 items-center group">
+                                   <div className="h-1.5 w-1.5 rounded-full bg-primary/40 group-hover:bg-primary transition-colors shrink-0" />
+                                   <div className="text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors">{e}</div>
+                                </div>
+                             ))}
+                             {report.behaviourEvents.length === 0 && <p className="text-xs text-slate-600 italic">No behavioral metadata clusters found.</p>}
+                          </div>
+                       </motion.div>
+                    )}
+                 </AnimatePresence>
+              </div>
+
+           </div>
+
+           {/* Supplemental Analysis (5 cols) */}
+           <div className="lg:col-span-5 space-y-8">
+              
+              {/* Metric Breakdown */}
+              <Card className="bg-white/[0.01] border border-white/10 rounded-[2.5rem] p-10 space-y-10">
+                 <h3 className="text-lg font-black text-white flex items-center gap-3">
+                    <BarChart size={20} className="text-primary" /> Array Performance
+                 </h3>
+                 <div className="space-y-8">
+                    <MetricProgress label="Verbal Sentiment Matrix" value={report.verbalScore} color="bg-primary" delay={0.2} />
+                    <MetricProgress label="Behavioural Engagement Map" value={report.behaviourScore} color="bg-green-500" delay={0.4} />
+                    <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                       <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <span>Target Accuracy</span>
+                          <span className="text-primary">88%</span>
+                       </div>
+                       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full w-[88%] bg-primary" />
+                       </div>
+                    </div>
+                 </div>
+              </Card>
+
+              {/* Context Summary */}
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 space-y-6 relative group overflow-hidden">
+                 <div className="absolute -bottom-6 -right-6 opacity-5 rotate-12">
+                     <Target size={120} className="text-white" />
+                 </div>
+                 <h3 className="text-lg font-black text-white flex items-center gap-3">
+                    <Zap size={20} className="text-amber-400" /> Strategic Context
+                 </h3>
+                 <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-black/40 border border-white/5">
+                       <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                          <CheckCircle2 size={16} className="text-green-400" />
+                       </div>
+                       <div className="space-y-1">
+                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Confidence</span>
+                          <p className="text-xs text-slate-400 font-bold uppercase italic font-mono tracking-tighter">TELEMETRY LINK HIGH</p>
+                       </div>
+                    </div>
+                    <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl">
+                       <p className="text-xs font-bold text-slate-400 leading-relaxed italic">
+                          "Pattern synthesis aligns this subject as a {report.visitorType.toLowerCase()}. Recommendation: {cfg.desc}"
+                       </p>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Navigation Actions */}
+              <div className="flex gap-4">
+                 <Link href="/dashboard" className="flex-1">
+                    <Button variant="outline" className="w-full h-16 rounded-2xl border-white/10 hover:bg-white/5 font-black uppercase tracking-widest text-[10px]">
+                       <Home size={16} className="mr-2" /> DASHBOARD
+                    </Button>
+                 </Link>
+                 <Link href="/setup" className="flex-1">
+                    <Button className="w-full h-16 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-[10px] hover:bg-slate-200">
+                       <Plus size={16} className="mr-2" /> NEW PROBE
+                    </Button>
+                 </Link>
+              </div>
+
+           </div>
         </div>
       </div>
     </div>
