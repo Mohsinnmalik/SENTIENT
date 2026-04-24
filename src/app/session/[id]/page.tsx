@@ -311,7 +311,7 @@ export default function SessionPage() {
           <div className="lg:col-span-8 space-y-8">
             {phase === "idle" ? (
               <section className="relative group overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/5 to-transparent border border-white/5 p-12 lg:p-20 text-center flex flex-col items-center gap-8">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none" />
+                <div className="absolute inset-0 bg-white/[0.01] pointer-events-none" />
                 <div className="relative h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shadow-2xl">
                    <Brain className="h-12 w-12 text-primary" />
                 </div>

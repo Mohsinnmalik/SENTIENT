@@ -166,7 +166,7 @@ export default function PremiumReportPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-8 space-y-10">
             <section className="relative group overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 p-10 md:p-14">
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none" />
+               <div className="absolute inset-0 bg-white/[0.01] pointer-events-none" />
                <div className="relative flex flex-col gap-8">
                   <div className="flex flex-wrap items-center justify-between gap-6">
                     <div className="space-y-2">

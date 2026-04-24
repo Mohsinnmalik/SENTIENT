@@ -169,39 +169,44 @@ export function useNeuralEngine(active: boolean = false) {
     if (!active) return;
     
     async function init() {
+      const timeout = setTimeout(() => {
+        if (!isReady) {
+          console.warn("[NeuralEngine] Initialization taking too long, possibly network/permission delay.");
+        }
+      }, 8000);
+
       try {
         if (!modelsLoaded) {
-          // Attempt high-accuracy load
+          // SSD Mobilenet is missing from the public folder. Use TinyFaceDetector (Confirmed Present).
           try {
-            await Promise.all([
-              faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
-              faceapi.nets.faceExpressionNet.loadFromUri("/models"),
-            ]);
-            modelsLoaded = true;
-          } catch {
-            // Fallback to lightweight models
             await Promise.all([
               faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
               faceapi.nets.faceExpressionNet.loadFromUri("/models"),
             ]);
             modelsLoaded = true;
+            console.log("[NeuralEngine] Primary models (TinyFace) loaded.");
+          } catch (loadErr) {
+            console.error("[NeuralEngine] Failed to load models:", loadErr);
+            throw new Error("Neural models could not be fetched from /models. Check deployment assets.");
           }
 
-          // Hands Analysis Initialization
+          // Hands Analysis Initialization (MediaPipe)
           try {
-            const { Hands } = await import("@mediapipe/hands");
-            handsInstance = new Hands({
-              locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-            });
+            const mpHands = await import("@mediapipe/hands");
+            const HandsConstructor = (mpHands as any).Hands || mpHands.default?.Hands || mpHands.Hands;
             
-            if (handsInstance) {
+            if (HandsConstructor) {
+              handsInstance = new HandsConstructor({
+                locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+              });
+              
               handsInstance.setOptions({
                 maxNumHands: 1,
                 modelComplexity: 1,
                 minDetectionConfidence: 0.65,
                 minTrackingConfidence: 0.65,
               });
-              handsInstance.onResults((results) => {
+              handsInstance.onResults((results: any) => {
                 if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                   handsDetectedRef.current = true;
                   gestureRef.current = classifyGesture(results.multiHandLandmarks[0]);
@@ -211,7 +216,8 @@ export function useNeuralEngine(active: boolean = false) {
                 }
               });
             }
-          } catch {
+          } catch (handErr) {
+            console.warn("[NeuralEngine] Hand tracking (MediaPipe) disabled:", handErr);
             setDetectionQual("face_only");
           }
         }
@@ -226,22 +232,19 @@ export function useNeuralEngine(active: boolean = false) {
           videoRef.current.srcObject = globalStream;
           try {
             await videoRef.current.play();
-          } catch (e) {
-            console.warn("Autoplay blocked, waiting for interaction", e);
+          } catch {
+            console.log("[NeuralEngine] Autoplay blocked, waiting for interaction.");
           }
         }
+        
         setIsReady(true);
       } catch (err: unknown) {
         const error = err as Error;
-        console.error("[useNeuralEngine Init Error]", error);
-        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-          setCameraError("Camera Permission Denied: Please allow access in your browser settings.");
-        } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
-          setCameraError("No camera found. Please connect a webcam.");
-        } else {
-          setCameraError(`Neural Link Failed: ${error.message}`);
-        }
+        console.error("[NeuralEngine Critical Failure]", error);
+        setCameraError(error.message);
         setDetectionQual("failed");
+      } finally {
+        clearTimeout(timeout);
       }
     }
     init();
