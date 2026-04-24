@@ -186,10 +186,15 @@ export default function CameraAnalyzer({
         ) : (
           <div className="flex flex-col items-center gap-4 text-slate-500 bg-slate-900/50 w-full h-full justify-center">
             {hookError ? <AlertTriangle className="h-10 w-10 text-amber-500/50" /> : <CameraOff className="h-12 w-12 opacity-20" />}
-            <div className="text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-400 font-mono">
-                {hookError ? "Neural Sensor Offline" : "Initializing Link"}
+            <div className="text-center px-6">
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400 font-mono">
+                {hookError ? "Neural Link Interrupted" : "Initializing Link"}
               </p>
+              {hookError && (
+                <p className="text-[10px] font-medium text-amber-500/80 max-w-[200px] leading-relaxed">
+                  {hookError}
+                </p>
+              )}
             </div>
           </div>
         )}

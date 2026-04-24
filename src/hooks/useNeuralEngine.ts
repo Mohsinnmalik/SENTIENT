@@ -224,12 +224,23 @@ export function useNeuralEngine(active: boolean = false) {
 
         if (videoRef.current && !videoRef.current.srcObject) {
           videoRef.current.srcObject = globalStream;
+          try {
+            await videoRef.current.play();
+          } catch (e) {
+            console.warn("Autoplay blocked, waiting for interaction", e);
+          }
         }
-        
         setIsReady(true);
       } catch (err: unknown) {
         const error = err as Error;
-        setCameraError(error.message);
+        console.error("[useNeuralEngine Init Error]", error);
+        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+          setCameraError("Camera Permission Denied: Please allow access in your browser settings.");
+        } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+          setCameraError("No camera found. Please connect a webcam.");
+        } else {
+          setCameraError(`Neural Link Failed: ${error.message}`);
+        }
         setDetectionQual("failed");
       }
     }
