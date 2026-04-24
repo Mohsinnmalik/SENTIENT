@@ -134,57 +134,20 @@ export default function CameraAnalyzer({
             : "ring-white/10"
         }`}
       >
-        {isReady ? (
-          <>
-            <video
-              ref={hookVideoRef}
-              autoPlay
-              muted
-              playsInline
-              onCanPlay={() => setIsVideoReady(true)}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-                isReady ? "opacity-100" : "opacity-0"
-              }`}
-            />
+        {/* Video element must ALWAYS be in DOM for ref to be valid */}
+        <video
+          ref={hookVideoRef}
+          autoPlay
+          muted
+          playsInline
+          onCanPlay={() => setIsVideoReady(true)}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+            isReady ? "opacity-100" : "opacity-0"
+          }`}
+        />
 
-            <AnimatePresence>
-              {isVideoReady && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute inset-0 pointer-events-none"
-                >
-                  {/* Subtle scanline */}
-                  <motion.div
-                    animate={{ top: ["0%", "100%", "0%"] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    className="absolute left-0 right-0 h-[1px] bg-primary/30 z-10 opacity-20"
-                  />
-
-                  {viewStats?.box && (
-                    <motion.div
-                      layout
-                      initial={false}
-                      animate={{
-                        left: `${viewStats.box.x}%`,
-                        top: `${viewStats.box.y}%`,
-                        width: `${viewStats.box.width}%`,
-                        height: `${viewStats.box.height}%`,
-                        borderColor: viewStats.score > 7 ? "#60a5fa" : "#3b82f6",
-                      }}
-                      className="absolute border-[1px] rounded-2xl z-20 pointer-events-none shadow-[0_0_20px_rgba(59,130,246,0.1)] ring-1 ring-white/5"
-                    >
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary/20 backdrop-blur-md text-white text-[7px] font-black px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
-                        {viewStats.attention}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-4 text-slate-500 bg-slate-900/50 w-full h-full justify-center">
+        {!isReady && (
+          <div className="absolute inset-0 flex flex-col items-center gap-4 text-slate-500 bg-slate-900/50 w-full h-full justify-center z-10 transition-opacity">
             {hookError ? <AlertTriangle className="h-10 w-10 text-amber-500/50" /> : <CameraOff className="h-12 w-12 opacity-20" />}
             <div className="text-center px-6">
               <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400 font-mono">
@@ -197,6 +160,42 @@ export default function CameraAnalyzer({
               )}
             </div>
           </div>
+        )}
+
+        {isReady && isVideoReady && (
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 pointer-events-none"
+            >
+              {/* Subtle scanline */}
+              <motion.div
+                animate={{ top: ["0%", "100%", "0%"] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                className="absolute left-0 right-0 h-[1px] bg-primary/30 z-10 opacity-20"
+              />
+
+              {viewStats?.box && (
+                <motion.div
+                  layout
+                  initial={false}
+                  animate={{
+                    left: `${viewStats.box.x}%`,
+                    top: `${viewStats.box.y}%`,
+                    width: `${viewStats.box.width}%`,
+                    height: `${viewStats.box.height}%`,
+                    borderColor: viewStats.score > 7 ? "#60a5fa" : "#3b82f6",
+                  }}
+                  className="absolute border-[1px] rounded-2xl z-20 pointer-events-none shadow-[0_0_20px_rgba(59,130,246,0.1)] ring-1 ring-white/5"
+                >
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary/20 backdrop-blur-md text-white text-[7px] font-black px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-tighter">
+                    {viewStats.attention}
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
         
         {/* Minimal Link Status Indicator */}

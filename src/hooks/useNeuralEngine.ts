@@ -174,6 +174,13 @@ export function useNeuralEngine(active: boolean = false) {
     async function init() {
       // 1. START CAMERA IMMEDIATELY (Highest Priority)
       try {
+        if (globalStream) {
+          const tracks = globalStream.getTracks();
+          if (tracks.length === 0 || tracks.some(t => t.readyState === 'ended')) {
+            globalStream = null;
+          }
+        }
+
         if (!globalStream) {
           globalStream = await navigator.mediaDevices.getUserMedia({
             video: { width: 640, height: 480 },
@@ -270,6 +277,19 @@ export function useNeuralEngine(active: boolean = false) {
     }
     init();
   }, [active]);
+
+  // 1b. Persistent Stream Attachment (Safety Overlay)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !globalStream || !active) return;
+
+    if (video.srcObject !== globalStream) {
+      video.srcObject = globalStream;
+      video.play().catch(() => {
+        console.log("[NeuralEngine] Interaction required for play");
+      });
+    }
+  }, [isReady, active]);
 
   // 2. Inference Loop (Stabilized 10FPS)
   useEffect(() => {
