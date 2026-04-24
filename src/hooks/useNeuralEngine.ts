@@ -169,11 +169,38 @@ export function useNeuralEngine(active: boolean = false) {
     if (!active) return;
     
     async function init() {
-      const timeout = setTimeout(() => {
-        if (!isReady) {
-          console.warn("[NeuralEngine] Initialization taking too long, possibly network/permission delay.");
+      // 1. START CAMERA IMMEDIATELY (Highest Priority)
+      try {
+        if (!globalStream) {
+          globalStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+          });
         }
-      }, 8000);
+
+        if (videoRef.current && !videoRef.current.srcObject) {
+          videoRef.current.srcObject = globalStream;
+          try {
+            await videoRef.current.play();
+          } catch {
+            console.log("[NeuralEngine] Autoplay blocked, waiting for interaction.");
+          }
+        }
+        
+        // Show the video even before models are ready
+        setIsReady(true);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.error("[NeuralEngine Camera Failure]", error);
+        setCameraError(error.message);
+        return; // Don't try to load models if camera is dead
+      }
+
+      // 2. LOAD MODELS IN BACKGROUND
+      const timeout = setTimeout(() => {
+        if (detectionQual === "waiting") {
+          console.warn("[NeuralEngine] Model loading taking longer than expected.");
+        }
+      }, 10000);
 
       try {
         if (!modelsLoaded) {
@@ -184,10 +211,11 @@ export function useNeuralEngine(active: boolean = false) {
               faceapi.nets.faceExpressionNet.loadFromUri("/models"),
             ]);
             modelsLoaded = true;
-            console.log("[NeuralEngine] Primary models (TinyFace) loaded.");
+            console.log("[NeuralEngine] Neural models loaded.");
           } catch (loadErr) {
             console.error("[NeuralEngine] Failed to load models:", loadErr);
-            throw new Error("Neural models could not be fetched from /models. Check deployment assets.");
+            // Don't throw, just degrade performance
+            setDetectionQual("failed");
           }
 
           // Hands Analysis Initialization (MediaPipe)
@@ -227,32 +255,12 @@ export function useNeuralEngine(active: boolean = false) {
               handsInstance = instance as any;
             }
           } catch (handErr) {
-            console.warn("[NeuralEngine] Hand tracking (MediaPipe) disabled:", handErr);
+            console.warn("[NeuralEngine] Hand tracking disabled:", handErr);
             setDetectionQual("face_only");
           }
         }
-
-        if (!globalStream) {
-          globalStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480 },
-          });
-        }
-
-        if (videoRef.current && !videoRef.current.srcObject) {
-          videoRef.current.srcObject = globalStream;
-          try {
-            await videoRef.current.play();
-          } catch {
-            console.log("[NeuralEngine] Autoplay blocked, waiting for interaction.");
-          }
-        }
-        
-        setIsReady(true);
       } catch (err: unknown) {
-        const error = err as Error;
-        console.error("[NeuralEngine Critical Failure]", error);
-        setCameraError(error.message);
-        setDetectionQual("failed");
+        console.error("[NeuralEngine Model Failure]", err);
       } finally {
         clearTimeout(timeout);
       }
