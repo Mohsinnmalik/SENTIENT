@@ -193,28 +193,38 @@ export function useNeuralEngine(active: boolean = false) {
           // Hands Analysis Initialization (MediaPipe)
           try {
             const mpHands = await import("@mediapipe/hands");
-            const HandsConstructor = (mpHands as any).Hands || mpHands.default?.Hands || mpHands.Hands;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const HandsConstructor = (mpHands as any).Hands || (mpHands as any).default?.Hands || (mpHands as any).Hands;
             
             if (HandsConstructor) {
-              handsInstance = new HandsConstructor({
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+              const instance = new HandsConstructor({
                 locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
               });
               
-              handsInstance.setOptions({
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+              instance.setOptions({
                 maxNumHands: 1,
                 modelComplexity: 1,
                 minDetectionConfidence: 0.65,
                 minTrackingConfidence: 0.65,
               });
-              handsInstance.onResults((results: any) => {
+              
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+              instance.onResults((results: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                   handsDetectedRef.current = true;
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                   gestureRef.current = classifyGesture(results.multiHandLandmarks[0]);
                 } else {
                   handsDetectedRef.current = false;
                   gestureRef.current = null;
                 }
               });
+
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              handsInstance = instance as any;
             }
           } catch (handErr) {
             console.warn("[NeuralEngine] Hand tracking (MediaPipe) disabled:", handErr);
