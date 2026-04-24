@@ -5,7 +5,7 @@ import * as faceapi from "face-api.js";
 
 // ── Types ─────────────────────────────────────────────────────
 
-export type DetectionQuality = "full" | "face_only" | "no_camera" | "failed";
+export type DetectionQuality = "full" | "face_only" | "no_camera" | "failed" | "waiting";
 
 export type GestureType = 
   | "thumbsUp" 
@@ -162,7 +162,10 @@ export function useNeuralEngine(active: boolean = false) {
   const noFaceCountRef = useRef(0);
   const frameCountRef = useRef(0);
   const emotionBufferRef = useRef<string[]>([]);
-  const BUFFER_SIZE = 8;
+  const postureBufferRef = useRef<string[]>([]);
+  const boxBufferRef = useRef<{ x: number, y: number, width: number, height: number } | null>(null);
+  const BUFFER_SIZE = 20; // 2 seconds of history at 10fps
+  const DISTRACTION_THRESHOLD = 15; // 1.5 seconds of no face before "distracted"
 
   // 1. Resource Initialization
   useEffect(() => {
@@ -268,38 +271,24 @@ export function useNeuralEngine(active: boolean = false) {
     init();
   }, [active]);
 
-  // 2. Inference Loop
+  // 2. Inference Loop (Stabilized 10FPS)
   useEffect(() => {
     if (!isReady || !active) return;
 
-    const interval = setInterval(async () => {
+    const runInference = async () => {
       const video = videoRef.current;
       if (runningRef.current || !video || video.readyState < 3 || !modelsLoaded) return;
       
       runningRef.current = true;
-      frameCountRef.current++;
-
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let detection: any = null;
+        frameCountRef.current++;
         
-        const isSsdLoaded = faceapi.nets.ssdMobilenetv1.isLoaded;
-        const isTinyLoaded = faceapi.nets.tinyFaceDetector.isLoaded;
-
-        if (isSsdLoaded) {
-          try {
-            detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceExpressions();
-          } catch {
-            if (isTinyLoaded) {
-              detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-            }
-          }
-        } else if (isTinyLoaded) {
-          detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-        }
+        // Face Analysis
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
+        const detection = await faceapi.detectSingleFace(video, options).withFaceExpressions();
 
         if (handsInstance && video) {
-          await handsInstance.send({ image: video });
+          handsInstance.send({ image: video }).catch(() => {});
         }
 
         const handDetected = handsDetectedRef.current;
@@ -309,75 +298,93 @@ export function useNeuralEngine(active: boolean = false) {
         let exprLabel = EXPRESSION_LABELS.neutral;
         let exprConf = 0;
         let exprW = 0;
-        let box = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let box: any = null;
         let pState: "leaning_in" | "neutral" | "leaning_back" = "neutral";
         let pWeight = 0;
 
         if (detection) {
           noFaceCountRef.current = 0;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const expressions = detection.expressions;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+          const expressions = (detection as any).expressions;
           const sorted = Object.entries(expressions).sort(([, a], [, b]) => (b as number) - (a as number));
           
           let currentBest = sorted[0][0].toLowerCase();
           
-          // Neutral Bias Mitigation
-          if (currentBest === "neutral" && sorted[1] && (sorted[1][1] as number) > 0.25) {
-             if ((sorted[0][1] as number) - (sorted[1][1] as number) < 0.45) {
+          if (currentBest === "neutral" && sorted[1] && (sorted[1][1] as number) > 0.3) {
+             if ((sorted[0][1] as number) - (sorted[1][1] as number) < 0.4) {
                 currentBest = sorted[1][0].toLowerCase();
              }
           }
 
           emotionBufferRef.current.push(currentBest);
-          if (emotionBufferRef.current.length > BUFFER_SIZE) {
-            emotionBufferRef.current.shift();
-          }
+          if (emotionBufferRef.current.length > BUFFER_SIZE) emotionBufferRef.current.shift();
 
           const counts: Record<string, number> = {};
           emotionBufferRef.current.forEach(e => counts[e] = (counts[e] || 0) + 1);
           expr = Object.entries(counts).sort(([, a], [, b]) => b - a)[0][0];
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          exprConf = expressions[expr] as number;
+          exprConf = expressions[expr] as number || 0;
           exprLabel = EXPRESSION_LABELS[expr] || "Neutral 😐";
           exprW = (EXPRESSION_WEIGHTS[expr] || 0);
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const detBox = detection.detection.box;
-          const { x, y, width, height } = detBox;
-          box = { 
-            x: (x / video.videoWidth) * 100, 
-            y: (y / video.videoHeight) * 100, 
-            width: (width / video.videoWidth) * 100, 
-            height: (height / video.videoHeight) * 100 
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+          const detBox = (detection as any).detection.box;
+          const targetBox = { 
+            x: (detBox.x / video.videoWidth) * 100, 
+            y: (detBox.y / video.videoHeight) * 100, 
+            width: (detBox.width / video.videoWidth) * 100, 
+            height: (detBox.height / video.videoHeight) * 100 
           };
 
-          if (width / video.videoWidth > 0.3) {
-            pState = "leaning_in";
-            pWeight = 2;
-          } else if (width / video.videoWidth < 0.14) {
-            pState = "leaning_back";
-            pWeight = -2;
+          if (!boxBufferRef.current) {
+            boxBufferRef.current = targetBox;
+          } else {
+            const bAlpha = 0.2;
+            boxBufferRef.current = {
+              x: boxBufferRef.current.x * (1 - bAlpha) + targetBox.x * bAlpha,
+              y: boxBufferRef.current.y * (1 - bAlpha) + targetBox.y * bAlpha,
+              width: boxBufferRef.current.width * (1 - bAlpha) + targetBox.width * bAlpha,
+              height: boxBufferRef.current.height * (1 - bAlpha) + targetBox.height * bAlpha
+            };
           }
+          box = boxBufferRef.current;
+
+          let instantP: "leaning_in" | "neutral" | "leaning_back" = "neutral";
+          if (detBox.width / video.videoWidth > 0.28) instantP = "leaning_in";
+          else if (detBox.width / video.videoWidth < 0.15) instantP = "leaning_back";
+
+          postureBufferRef.current.push(instantP);
+          if (postureBufferRef.current.length > 10) postureBufferRef.current.shift();
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pEntries = Object.entries(postureBufferRef.current.reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {} as any));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          pState = pEntries.sort(([, a], [, b]) => (b as number) - (a as number))[0][0] as any;
+          pWeight = pState === "leaning_in" ? 2 : pState === "leaning_back" ? -2 : 0;
         } else {
           noFaceCountRef.current++;
-          emotionBufferRef.current = [];
+          if (noFaceCountRef.current > 5) {
+             emotionBufferRef.current = [];
+             boxBufferRef.current = null;
+          }
         }
 
         const gWeight = gesture ? (GESTURE_WEIGHTS[gesture] || 0) : 0;
-        const presWeight = detection ? 2.5 : -4;
+        const facePresent = noFaceCountRef.current < DISTRACTION_THRESHOLD;
+        const presWeight = facePresent ? 2.5 : -4;
         const raw = exprW + presWeight + gWeight + pWeight;
         const norm = Math.max(0, Math.min(10, raw + 5));
 
         setStats(prev => {
-          const alpha = frameCountRef.current < 10 ? 0.3 : 0.08;
+          const alpha = frameCountRef.current < 10 ? 0.3 : 0.12;
           const smooth = prev.score * (1 - alpha) + norm * alpha;
           return {
             score: Math.round(smooth * 10) / 10,
             expression: expr,
             expressionLabel: exprLabel,
             expressionConfidence: Math.round(exprConf * 100),
-            faceDetected: !(noFaceCountRef.current > 7),
+            faceDetected: facePresent,
             handDetected,
             gesture,
             gestureLabel: gesture ? (GESTURE_LABELS[gesture] || "—") : "—",
@@ -390,25 +397,19 @@ export function useNeuralEngine(active: boolean = false) {
               presence: Math.round((presWeight + pWeight) * 10) / 10 
             },
             detectionQuality: handsInstance ? "full" : "face_only",
-            noFaceSeconds: Math.floor(noFaceCountRef.current / 5),
+            noFaceSeconds: Math.floor(noFaceCountRef.current / 10),
           };
         });
       } catch (err) {
-        console.error("[useNeuralEngine] Inference Error:", err);
+        console.error("[NeuralEngine] Loop Error:", err);
       } finally {
         runningRef.current = false;
       }
-    }, 200);
+    };
 
+    const interval = setInterval(runInference, 100);
     return () => clearInterval(interval);
   }, [isReady, active]);
 
-  return { 
-    videoRef, 
-    stats, 
-    isReady, 
-    error: cameraError, 
-    cameraError, 
-    detectionQuality: detectionQual 
-  };
+  return { videoRef, stats, isReady, error: cameraError, cameraError, detectionQuality: detectionQual };
 }

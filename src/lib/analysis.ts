@@ -85,7 +85,7 @@ export function analyzeTranscript(
   behaviourScore: number,
   behaviourEvents: string[],
   interactionDuration: number = 0,
-  detectionQuality: "full" | "face_only" | "no_camera" | "failed" = "full"
+  detectionQuality: "full" | "face_only" | "no_camera" | "failed" | "waiting" = "full"
 ): AnalysisResult {
   const lower = transcript.toLowerCase().trim();
   const isSilent = !lower || lower.includes("remained silent") || lower.length < 4;
@@ -225,7 +225,7 @@ function buildSummary(
   bScore: number,
   events: string[],
   conf: string,
-  detectionQuality: "full" | "face_only" | "no_camera" | "failed"
+  detectionQuality: "full" | "face_only" | "no_camera" | "failed" | "waiting"
 ): string {
   const parts: string[] = [];
 
