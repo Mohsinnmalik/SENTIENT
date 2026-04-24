@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     
     return jsonResponse(true, "Products fetched successfully", products, 200);
   } catch (error) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+    return jsonResponse(false, "Internal Error", (error as Error).message, 500);
   }
 }
 

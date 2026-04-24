@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     
     return jsonResponse(true, "Session details fetched", { session, toolkit });
   } catch (error) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+    return jsonResponse(false, "Internal Error", (error as Error).message, 500);
   }
 }
 
