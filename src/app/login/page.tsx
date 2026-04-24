@@ -7,7 +7,7 @@ import { ArrowRight, Loader2, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { toast } from "sonner"; // Using shadcn sonner toast
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasMounted(true);
   }, []);
 
@@ -42,8 +43,9 @@ export default function LoginPage() {
       } else {
         toast.error(data.message || "Invalid credentials");
       }
-    } catch (err: any) {
-      toast.error("Network error. Please try again.");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -74,9 +76,9 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-white">System Access</h1>
+              <h1 className="text-3xl font-black tracking-tight text-white">Quantum Link</h1>
               <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
-                Initialize Secure Connection
+                Authorized Entry Only
               </p>
             </div>
           </div>
@@ -88,15 +90,15 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white"
+              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
             />
-            <Input
+             <Input
               type="password"
-              placeholder="Password"
+              placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white"
+              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
             />
             
             <Button 
@@ -108,11 +110,11 @@ export default function LoginPage() {
                 {isLoading ? (
                   <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    AUTHORIZING...
+                    CONNECTING...
                   </motion.div>
                 ) : (
                   <motion.div key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3">
-                    CONNECT
+                    ACCESS SYSTEM
                     <ArrowRight className="h-5 w-5" />
                   </motion.div>
                 )}
@@ -121,15 +123,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 text-center space-y-4">
-            <Link href="/signup" className="text-xs font-bold text-slate-400 hover:text-white transition-colors">
-              New node? Register here.
+            <Link href="/signup" className="text-xs font-bold text-slate-400 hover:text-white transition-colors block">
+              New Agent? Initialize Profile
             </Link>
-            <div className="pt-8 border-t border-white/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex flex-col gap-2">
-                <span>Encrypted Node Terminal</span>
-                <span className="text-slate-600">v2.0.4 Sentient AI</span>
-              </p>
-            </div>
           </div>
         </motion.div>
       </div>

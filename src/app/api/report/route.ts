@@ -24,8 +24,9 @@ export async function POST(req: NextRequest) {
 
     const report = await SessionReport.create(body);
     return jsonResponse(true, "Report generated successfully", report, 201);
-  } catch (error: any) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+  } catch (error) {
+    console.error("[Report API Error]", error);
+    return jsonResponse(false, "Internal server error", null, 500);
   }
 }
 
@@ -49,7 +50,8 @@ export async function GET(req: NextRequest) {
        const reports = await SessionReport.find({ userId: user.userId }).sort({ createdAt: -1 });
        return jsonResponse(true, "Reports fetched successfully", reports);
     }
-  } catch (error: any) {
-    return jsonResponse(false, "Internal error", error.message, 500);
+  } catch (error) {
+    console.error("[Report API GET Error]", error);
+    return jsonResponse(false, "Internal server error", null, 500);
   }
 }

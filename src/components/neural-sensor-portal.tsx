@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, X, Maximize2, Minimize2, Activity, Zap, Shield, Sparkles } from "lucide-react";
+import { Brain, X, Maximize2, Minimize2, Activity, Shield, Sparkles } from "lucide-react";
 import { useNeuralEngine } from "@/hooks/useNeuralEngine";
 import { usePathname } from "next/navigation";
 
@@ -12,7 +12,7 @@ export function NeuralSensorPortal() {
   const [hasStarted, setHasStarted] = useState(false);
   const pathname = usePathname();
   
-  const { videoRef, stats, isReady, error } = useNeuralEngine(hasStarted);
+  const { videoRef, stats } = useNeuralEngine(hasStarted);
 
   // Auto-hide portal on session page to avoid overlap with full analyzer
   const isSessionPage = pathname.includes("/session/");
@@ -129,11 +129,7 @@ export function NeuralSensorPortal() {
                   className="pt-2 space-y-3"
                 >
                    <div className="flex justify-between items-center text-[9px] font-bold pb-2 border-b border-white/10">
-                      <span className="text-slate-400">Verbal Sentiment</span>
-                      <span className="text-slate-500 font-mono">0.0 (Neutral)</span>
-                   </div>
-                   <div className="flex justify-between items-center text-[9px] font-bold pb-2 border-b border-white/10">
-                      <span className="text-slate-400">Eye Concentration</span>
+                      <span className="text-slate-400">Spatial Presence</span>
                       <span className="text-green-400">High</span>
                    </div>
                    <div className="pt-2">

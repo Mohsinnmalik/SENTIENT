@@ -44,7 +44,7 @@ export function DemoPreview() {
             >
               Seeing What the Customer{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400 italic">
-                Doesn't Say.
+                Doesn&apos;t Say.
               </span>
             </motion.h2>
 
@@ -55,8 +55,8 @@ export function DemoPreview() {
               transition={{ delay: 0.1 }}
               className="text-slate-400 text-lg leading-relaxed"
             >
-              SENTIENT's proprietary multi-modal engine analyses micro-expressions,
-              vocal intonation and interaction depth to surface a composite "Truth Score"
+              SENTIENT&apos;s proprietary multi-modal engine analyses micro-expressions,
+              vocal intonation and interaction depth to surface a composite &quot;Truth Score&quot;
               that goes far beyond verbal feedback alone.
             </motion.p>
 
@@ -160,9 +160,9 @@ export function DemoPreview() {
                   <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
                     <div className="text-[9px] font-black text-white/25 uppercase tracking-widest">Verbal Extract</div>
                     <div className="flex gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary italic shrink-0">"</div>
+                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary italic shrink-0">&quot;</div>
                       <div className="text-xs text-white/60 italic leading-relaxed">
-                        "The UI is very intuitive, I love the way the health metrics are presented..."
+                        &quot;The UI is very intuitive, I love the way the health metrics are presented...&quot;
                       </div>
                     </div>
                   </div>

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const products = await Product.find({ userId: user.userId }).sort({ createdAt: -1 });
     
     return jsonResponse(true, "Products fetched successfully", products, 200);
-  } catch (error: any) {
+  } catch (error) {
     return jsonResponse(false, "Internal Error", error.message, 500);
   }
 }
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     });
 
     return jsonResponse(true, "Product created successfully", product, 201);
-  } catch (error: any) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+  } catch (error) {
+    console.error("[Product API Error]", error);
+    return jsonResponse(false, "Internal server error", null, 500);
   }
 }

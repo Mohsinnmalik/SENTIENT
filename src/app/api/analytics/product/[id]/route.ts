@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
-import { SessionReport, Product, Session, Answer } from "@/models/Schema";
+import { SessionReport, Product, Answer } from "@/models/Schema";
 import { getAuthUser, jsonResponse } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,9 +22,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const pId = new mongoose.Types.ObjectId(productId);
     const uId = new mongoose.Types.ObjectId(user.userId);
 
-    // 1. Core Global Stats
+    // 1. Core Global Stats — FIX 7: exclude demo sessions
     const summaryPipeline = [
-      { $match: { productId: pId, userId: uId } },
+      { $match: { productId: pId, userId: uId, isDemo: { $ne: true } } },
       {
         $group: {
           _id: null,
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       strongBuyers: 0, interestedUsers: 0, browsingUsers: 0
     };
 
-    // 2. Trend Analysis (Last 3 vs Global)
-    const lastThree = await SessionReport.find({ productId: pId, userId: uId })
+    // 2. Trend Analysis (Last 3 vs Global — FIX 7: real sessions only)
+    const lastThree = await SessionReport.find({ productId: pId, userId: uId, isDemo: { $ne: true } })
       .sort({ createdAt: -1 })
       .limit(3)
       .select("overallScore");
@@ -113,21 +113,33 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       confidenceExplanation = "Moderate confidence based on initial session clusters; signals are beginning to stabilize.";
     }
 
-    // 6. Most Asked Questions
-    const sessions = await Session.find({ productId: pId, userId: uId }).select("_id");
-    const sessionIds = sessions.map(s => s._id);
-    let mostAskedQuestions = [];
-    if (sessionIds.length > 0) {
-      mostAskedQuestions = await Answer.aggregate([
-        { $match: { sessionId: { $in: sessionIds } } },
-        { $group: { _id: "$question", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 5 },
-        { $project: { question: "$_id", count: 1, _id: 0 } }
-      ]);
-    }
+    // 6. Most Asked Questions — optimized: direct aggregation without pre-fetching session IDs
+    const mostAskedQuestions = await Answer.aggregate([
+      {
+        $lookup: {
+          from: "sessions",
+          localField: "sessionId",
+          foreignField: "_id",
+          as: "session",
+        },
+      },
+      { $unwind: "$session" },
+      {
+        $match: {
+          "session.productId": pId,
+          "session.userId": uId,
+        },
+      },
+      { $group: { _id: "$question", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      { $project: { question: "$_id", count: 1, _id: 0 } },
+    ]);
 
-    const historicalSessions = await SessionReport.find({ productId: pId, userId: uId }).sort({ createdAt: -1 });
+    // FIX: historicalSessions excludes demo sessions for clean interaction history
+    const historicalSessions = await SessionReport
+      .find({ productId: pId, userId: uId, isDemo: { $ne: true } })
+      .sort({ createdAt: -1 });
 
     return jsonResponse(true, "Product analytics synthesized", {
       product,
@@ -144,8 +156,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       mostAskedQuestions,
       historicalSessions
     });
-
-  } catch (error: any) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("[Analytics Product Error]", err);
+    return jsonResponse(false, "Internal server error", null, 500);
   }
 }

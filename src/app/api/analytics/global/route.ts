@@ -40,7 +40,8 @@ export async function GET(req: NextRequest) {
        conversionRate: `${conversionRate}%`,
        averageEngagement: stats.averageScore?.toFixed(1) || 0
     });
-  } catch (error: any) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+  } catch (error: unknown) {
+    const err = error as Error;
+    return jsonResponse(false, "Internal Error", err.message, 500);
   }
 }

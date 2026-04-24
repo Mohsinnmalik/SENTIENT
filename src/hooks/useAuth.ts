@@ -11,44 +11,44 @@ export function useAuth() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("sentient_token");
       const storedUser = localStorage.getItem("sentient_user");
+      const isProtectedRoute = ["/dashboard", "/session", "/report", "/analytics", "/toolkit"].some(
+        (route) => pathname.startsWith(route)
+      );
 
-      const isProtectedRoute = ["/dashboard", "/session", "/report", "/analytics"].some(route => pathname.startsWith(route));
+      try {
+        // FIX 4: Use credentials:"include" so the HttpOnly auth_token cookie is sent automatically.
+        // No manual token attachment needed.
+        const res = await fetch("/api/auth/verify", {
+          credentials: "include",
+        });
+        const data = await res.json();
 
-      if (!token) {
-        if (isProtectedRoute) {
-          router.push("/login");
+        if (data.success) {
+          setUser(data.data.user);
+          localStorage.setItem("sentient_user", JSON.stringify(data.data.user));
+        } else {
+          // Cookie invalid/expired
+          localStorage.removeItem("sentient_user");
+          localStorage.removeItem("sentient_token"); // clean legacy localStorage token
+          setUser(null);
+          if (isProtectedRoute) router.push("/login");
         }
-        setLoading(false);
-        return;
-      }
-
-      // We have a token, optionally ping backend (we only do it if we don't have local cache or sometimes for strict safety)
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-        setLoading(false);
-      } else {
-        // Validate with backend
-        try {
-          const res = await fetch("/api/auth/verify", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (data.success) {
-            setUser(data.data.user);
-            localStorage.setItem("sentient_user", JSON.stringify(data.data.user));
-          } else {
-            // Invalid token
-            localStorage.removeItem("sentient_token");
+      } catch {
+        // Network failure — use cached user if available for resilience
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {
+            // Corrupt localStorage — clear it and redirect
             localStorage.removeItem("sentient_user");
             if (isProtectedRoute) router.push("/login");
           }
-        } catch {
-          if (isProtectedRoute) router.push("/login");
-        } finally {
-          setLoading(false);
+        } else if (isProtectedRoute) {
+          router.push("/login");
         }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -57,8 +57,11 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {} // ignore
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {}
     localStorage.removeItem("sentient_token");
     localStorage.removeItem("sentient_user");
     setUser(null);

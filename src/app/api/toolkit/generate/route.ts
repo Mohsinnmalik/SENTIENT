@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
     });
     
     return jsonResponse(true, "Toolkit generated successfully", toolkit, 201);
-  } catch (error: any) {
-    return jsonResponse(false, "Internal Error", error.message, 500);
+  } catch (error: unknown) {
+    const err = error as Error;
+    return jsonResponse(false, "Internal Error", err.message, 500);
   }
 }

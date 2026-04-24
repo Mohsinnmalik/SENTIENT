@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, ArrowRight, Clock, Activity, Loader2, AlertCircle, RefreshCcw, Sparkles } from "lucide-react";
+import { Box, ArrowRight, Clock, Activity, Loader2, AlertCircle, RefreshCcw, Sparkles, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { BrainCircuit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Product {
@@ -17,23 +16,23 @@ interface Product {
   createdAt: string;
 }
 
+interface ReportTelemetry {
+  _id: string;
+  overallScore: number;
+  visitorType: string;
+}
+
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
-  const [reports, setReports] = useState<any[]>([]); // Added for telemetry feed
+  const [reports, setReports] = useState<ReportTelemetry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      fetchDashboardData();
-    }
-  }, [authLoading, user]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     const token = localStorage.getItem("sentient_token") || "";
@@ -48,8 +47,7 @@ export default function DashboardPage() {
       const repData = await repRes.json();
 
       if (prodData.success) {
-        // Deduplicate by name to fix pre-existing dirty DB entries
-        const uniqueProducts = [];
+        const uniqueProducts: Product[] = [];
         const seenNames = new Set();
         for (const p of prodData.data) {
           if (!seenNames.has(p.name)) {
@@ -61,15 +59,23 @@ export default function DashboardPage() {
       } else throw new Error(prodData.message);
 
       if (repData.success) {
-        setReports(repData.data.slice(0, 5)); // Last 5 reports
+        setReports(repData.data.slice(0, 5));
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      setError(errorObj.message);
       toast.error("Telemetry failure. Unable to sync data.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/health").catch(() => {});
+    if (!authLoading && user) {
+      fetchDashboardData();
+    }
+  }, [authLoading, user, fetchDashboardData]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -77,7 +83,17 @@ export default function DashboardPage() {
     } catch { return "UNKNOWN"; }
   };
 
-  if (authLoading || (!user && !error)) return null; // Let hook handle protection redirect
+  if (authLoading) return (
+    <div className="min-h-screen bg-[#04060f] flex flex-col items-center justify-center gap-6">
+       <div className="relative">
+          <div className="h-20 w-20 rounded-full border-2 border-primary/10 border-t-primary animate-spin" />
+          <BrainCircuit className="absolute inset-0 m-auto h-8 w-8 text-primary animate-pulse" />
+       </div>
+       <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 animate-pulse">Initializing Neural Link...</div>
+    </div>
+  );
+
+  if (!user && !error) return null;
 
   return (
     <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans">
@@ -96,20 +112,24 @@ export default function DashboardPage() {
             </div>
             <div className="text-sm font-black tracking-[0.2em] text-white/40 uppercase">Intelligence Array</div>
           </div>
+          <Button variant="ghost" onClick={fetchDashboardData} disabled={isLoading} className="text-slate-500 hover:text-white gap-2">
+             <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+             <span className="text-[10px] font-black uppercase tracking-widest">Resync</span>
+          </Button>
         </div>
 
         <div className="space-y-4">
           <motion.h1 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-black tracking-tight text-white"
+            className="text-5xl md:text-7xl font-black tracking-tight text-white line-clamp-1"
           >
-            Welcome back, {user?.name.split(' ')[0] || 'System'}.
+            Welcome back, {user?.name?.split(' ')[0] || 'System'}.
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
             className="text-xl text-slate-400 font-medium"
           >
-            Here is your scoped array and telemetry.
+            The telemetry matrix is currently stable.
           </motion.p>
         </div>
 
@@ -132,7 +152,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-          
           <div className="xl:col-span-8 space-y-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
@@ -201,8 +220,8 @@ export default function DashboardPage() {
             </h2>
             <div className="bg-white/[0.01] border border-white/[0.03] rounded-[2rem] p-6 space-y-6">
               {reports.length === 0 && <p className="text-slate-500 text-sm">No telemetry recorded yet.</p>}
-              {reports.map((r, i) => (
-                <div key={i} className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.02]">
+              {reports.map((r) => (
+                <div key={r._id} className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.02]">
                   <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-primary font-bold">R</div>
                   <div>
                     <div className="text-sm font-bold text-white mb-1">Session {r._id.slice(-5)}</div>
@@ -215,7 +234,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </div>

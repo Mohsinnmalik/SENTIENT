@@ -13,7 +13,10 @@ export function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   if (!mounted) {
     return (

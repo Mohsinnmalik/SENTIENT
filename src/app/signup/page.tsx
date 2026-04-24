@@ -7,7 +7,7 @@ import { ArrowRight, Loader2, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { toast } from "sonner"; // Assuming sonner is used for toasts based on package.json
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -18,6 +18,7 @@ export default function SignupPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasMounted(true);
   }, []);
 
@@ -43,8 +44,9 @@ export default function SignupPage() {
       } else {
         toast.error(data.message || "Registration failed");
       }
-    } catch (err: any) {
-      toast.error("Network error. Please try again.");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +91,7 @@ export default function SignupPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white"
+              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
             />
             <Input
               type="email"
@@ -97,7 +99,7 @@ export default function SignupPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white"
+              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
             />
              <Input
               type="password"
@@ -105,7 +107,7 @@ export default function SignupPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white"
+              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
             />
             
             <Button 

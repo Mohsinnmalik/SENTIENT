@@ -32,7 +32,10 @@ export default function SetupPage() {
     name: "", type: "", description: "", focusAreas: [], targetAudience: "", buyerCriteria: "", investorCriteria: "",
   });
 
-  useEffect(() => setHasMounted(true), []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setHasMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const handleToggleFocusArea = (area: string) => {
     setFormData(prev => ({

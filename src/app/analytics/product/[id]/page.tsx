@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ArrowLeft, Activity, Clock, BarChart3, Users, 
+  ArrowLeft, Activity, Clock, Users, 
   MessageSquare, Calendar, TrendingUp, TrendingDown,
   BrainCircuit, Loader2, AlertCircle, Info, Sparkles,
   Target, ShieldCheck, Zap, ArrowUpRight, BarChart
@@ -12,9 +13,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// ── Shared UI Components ─────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
 
-const KPIBlock = ({ label, value, subtext, icon: Icon, trend }: any) => (
+interface KPIBlockProps {
+  label: string;
+  value: string | number;
+  subtext: string;
+  icon: React.ElementType;
+  trend?: 'increasing' | 'decreasing' | 'stable';
+}
+
+const KPIBlock = ({ label, value, subtext, icon: Icon, trend }: KPIBlockProps) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
     className="bg-white/[0.02] border border-white/[0.05] p-6 rounded-[2rem] relative overflow-hidden group hover:border-primary/20 transition-all"
@@ -40,8 +49,14 @@ const KPIBlock = ({ label, value, subtext, icon: Icon, trend }: any) => (
   </motion.div>
 );
 
-const InsightCard = ({ insight }: any) => {
-  const config: any = {
+interface Insight {
+  priority: 'HIGH' | 'MEDIUM' | 'POSITIVE';
+  title: string;
+  text: string;
+}
+
+const InsightCard = ({ insight }: { insight: Insight }) => {
+  const config = {
     HIGH: { border: "border-red-500/30", bg: "bg-red-500/5", iconColor: "text-red-400", label: "CRITICAL" },
     MEDIUM: { border: "border-amber-500/30", bg: "bg-amber-500/5", iconColor: "text-amber-400", label: "ADVISORY" },
     POSITIVE: { border: "border-green-500/30", bg: "bg-green-500/5", iconColor: "text-green-400", label: "POSITIVE" }
@@ -69,19 +84,47 @@ const InsightCard = ({ insight }: any) => {
   );
 };
 
-// ── Main Dashboard ───────────────────────────────────────────────────────────
+interface HistoricalSession {
+  _id: string;
+  createdAt: string;
+  visitorType: string;
+  overallScore: number;
+  interactionDuration: number;
+}
 
-export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+interface AnalyticsData {
+  product: {
+    _id: string;
+    name: string;
+    type: string;
+    description: string;
+  };
+  stats: {
+    totalSessions: number;
+    avgScore: number;
+    avgVerbal: number;
+    avgBehavioural: number;
+    avgDuration: number;
+    strongBuyerPct: number;
+    interestedPct: number;
+    browsingPct: number;
+    conversionRate: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+    confidenceExplanation: string;
+  };
+  insights: Insight[];
+  mostAskedQuestions: Array<{ question: string; count: number }>;
+  historicalSessions: HistoricalSession[];
+}
+
+export default function PremiumAnalyticsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [id]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("sentient_token") || "";
@@ -91,13 +134,18 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
       const result = await res.json();
       if (result.success) setData(result.data);
       else throw new Error(result.message || "Failed to retrieve array metrics");
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      setError(errorObj.message);
+      toast.error(errorObj.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const fmtTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -133,7 +181,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans pb-32">
-       {/* Background */}
        <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-primary/5 blur-[150px] rounded-full translate-x-1/3 -translate-y-1/3" />
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 blur-[120px] rounded-full -translate-x-1/2 translate-y-1/2" />
@@ -141,7 +188,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 pt-12 relative z-10 space-y-16">
-        {/* Navigation Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
            <div className="flex items-center gap-6">
               <Link href="/dashboard">
@@ -168,7 +214,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
            </div>
         </div>
 
-        {/* Top Metric Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
            <KPIBlock label="Engagement Quotient" value={stats.totalSessions} subtext="Total captured nodes" icon={Activity} />
            <KPIBlock label="Sentiment Index" value={stats.avgScore?.toFixed(1) || "0.0"} subtext="Composite score /10" icon={TrendingUp} trend={stats.trend} />
@@ -176,13 +221,8 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
            <KPIBlock label="Avg Connection Time" value={fmtTime(stats.avgDuration)} subtext="Telemetric session depth" icon={Clock} />
         </div>
 
-        {/* Global Overview Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-           
-           {/* LEFT: Insights & Distribution (8 cols) */}
            <div className="lg:col-span-8 space-y-12">
-              
-              {/* AI Insight Engine */}
               <div className="space-y-8">
                  <div className="flex justify-between items-end">
                     <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
@@ -201,12 +241,11 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                    </div>
                  ) : (
                    <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.1 } } }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {insights.map((ins: any, i: number) => <InsightCard key={i} insight={ins} />)}
+                      {insights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
                    </motion.div>
                  )}
               </div>
 
-              {/* Confidence Disclosure */}
               <div className="bg-white/[0.02] border border-white/[0.05] rounded-[2.5rem] p-10 relative overflow-hidden group">
                  <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
                     <ShieldCheck size={60} className="text-primary" />
@@ -231,7 +270,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                  </div>
               </div>
 
-              {/* Historical Interaction Ledger */}
               <div className="space-y-8">
                  <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
                     <Calendar className="h-6 w-6 text-primary" /> Telemetry Ledger
@@ -249,7 +287,7 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                              </tr>
                           </thead>
                           <tbody className="divide-y divide-white/[0.03]">
-                             {historicalSessions.map((s: any) => (
+                             {historicalSessions.map((s) => (
                                 <tr key={s._id} className="hover:bg-white/[0.02] transition-colors group">
                                    <td className="px-8 py-6">
                                       <div className="flex flex-col">
@@ -291,19 +329,16 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
               </div>
            </div>
 
-           {/* RIGHT: Supplemental Widgets (4 cols) */}
            <div className="lg:col-span-4 space-y-12">
-              
-              {/* Buyer Distribution Visual */}
               <div className="bg-white/[0.02] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8">
                  <h3 className="text-lg font-black text-white flex items-center gap-3">
                     <BarChart size={20} className="text-green-400" /> Subject Classes
                  </h3>
                  <div className="space-y-6">
                     {[
-                       { label: "STRONG BUYERS", pct: stats.strongBuyerPct, color: "bg-green-500", glow: "shadow-green-500/20" },
-                       { label: "INTERESTED NODES", pct: stats.interestedPct, color: "bg-primary", glow: "shadow-primary/20" },
-                       { label: "EXPLORATORY ENTITIES", pct: stats.browsingPct, color: "bg-slate-600", glow: "shadow-slate-500/10" }
+                       { label: "STRONG BUYERS", pct: stats.strongBuyerPct, color: "bg-green-500" },
+                       { label: "INTERESTED NODES", pct: stats.interestedPct, color: "bg-primary" },
+                       { label: "EXPLORATORY ENTITIES", pct: stats.browsingPct, color: "bg-slate-600" }
                     ].map(item => (
                        <div key={item.label} className="space-y-2">
                           <div className="flex justify-between items-end">
@@ -313,7 +348,7 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                              <motion.div 
                                initial={{ width: 0 }} animate={{ width: `${item.pct}%` }} transition={{ duration: 1, ease: 'easeOut' }}
-                               className={`h-full ${item.color} ${item.glow} shadow-lg`} 
+                               className={`h-full ${item.color}`} 
                              />
                           </div>
                        </div>
@@ -321,7 +356,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                  </div>
               </div>
 
-              {/* Most Frequent Interrogations */}
               <div className="bg-white/[0.02] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8 overflow-hidden relative">
                  <div className="absolute -bottom-4 -right-4 opacity-5 rotate-12">
                     <MessageSquare size={120} className="text-primary" />
@@ -330,7 +364,7 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                     <MessageSquare size={20} className="text-purple-400" /> Core Inquiries
                  </h3>
                  <div className="space-y-4">
-                    {mostAskedQuestions.map((q: any, i: number) => (
+                    {mostAskedQuestions.map((q, i) => (
                        <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex gap-4 group hover:border-purple-500/30 transition-all">
                           <div className="h-8 w-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
                              <span className="text-[10px] font-black text-purple-400">{q.count}x</span>
@@ -344,7 +378,6 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
                  </div>
               </div>
 
-              {/* Average Sentiment Radar */}
               <div className="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-[2.5rem] p-10 text-center relative overflow-hidden group">
                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.1),transparent)] group-hover:scale-150 transition-transform duration-1000" />
                  <h3 className="text-xl font-black text-white mb-8 italic tracking-tighter relative z-10">Neural Stability</h3>
@@ -377,4 +410,5 @@ export default function PremiumAnalyticsPage({ params }: { params: Promise<{ id:
   );
 }
 
-const Badge = ({ children, className }: any) => <span className={`inline-flex px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${className}`}>{children}</span>;
+const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => 
+  <span className={`inline-flex px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${className || ''}`}>{children}</span>;

@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     // 3. Parse input
     const body = await req.json();
     const email = body.email?.trim().toLowerCase();
-    const password = body.password?.trim();
+    // Do NOT trim the password — original whitespace is part of what was hashed.
+    const password = body.password;
 
     if (!email || !password) {
       return jsonResponse(false, "Missing credentials", null, 400);
@@ -47,17 +48,17 @@ export async function POST(req: NextRequest) {
     const token = await signToken(tokenPayload);
     await setAuthCookie(token);
 
-    // 7. Return safe response
+    // 7. Return safe response — include token for clients that can't use HttpOnly cookies (mobile, Postman)
     return jsonResponse(true, "Login successful", {
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
       },
-      token, // useful for clients bridging API/cookie support
+      token,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Login error:", error);
     return jsonResponse(false, "Internal server error", null, 500);
   }

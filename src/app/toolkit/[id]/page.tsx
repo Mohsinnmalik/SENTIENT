@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
+import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Play, TerminalSquare, AlertCircle, Quote, Loader2, Cpu, CheckSquare } from "lucide-react";
 import Link from "next/link";
@@ -9,15 +10,30 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 
-export default function ToolkitPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [data, setData] = useState<any>(null);
+
+interface ToolkitData {
+  _id: string;
+  productId: {
+    _id: string;
+    name: string;
+    type: string;
+    description: string;
+  };
+  reviewQuestions: string[];
+  qualifierQuestions: string[];
+  scoringCriteria: string[];
+}
+
+export default function ToolkitPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [data, setData] = useState<ToolkitData | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setHasMounted(true);
+    const frame = requestAnimationFrame(() => setHasMounted(true));
     const fetchToolkit = async () => {
       try {
         const token = localStorage.getItem("sentient_token") || "";
@@ -27,12 +43,14 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
         const result = await res.json();
         if (result.success) setData(result.data);
         else throw new Error(result.message || "Toolkit not found");
-      } catch (err: any) {
-        console.error(err);
-        toast.error(err.message || "Toolkit not found or unauthorized");
+      } catch (err) {
+        const error = err as Error;
+        console.error(error);
+        toast.error(error.message || "Toolkit not found or unauthorized");
       }
     };
     fetchToolkit();
+    return () => cancelAnimationFrame(frame);
   }, [id]);
 
   const handleStartSession = async () => {
@@ -52,9 +70,10 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
       if (!sessionResult.success) throw new Error(sessionResult.message || "Failed to initiate node");
       toast.success("Connection Established. Entering Live Session.");
       router.push(`/session/${sessionResult.data._id}`);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "System error. Node initialization failed.");
+    } catch (err) {
+      const error = err as Error;
+      console.error(error);
+      toast.error(error.message || "System error. Node initialization failed.");
     } finally {
       setIsStartingSession(false);
     }
@@ -150,7 +169,7 @@ export default function ToolkitPage({ params }: { params: Promise<{ id: string }
                        0{i + 1}
                      </div>
                      <p className="text-lg md:text-xl font-medium leading-normal text-slate-300 group-hover:text-white pt-2">
-                       "{q}"
+                       &quot;{q}&quot;
                      </p>
                   </motion.div>
                 ))}

@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Production Check: Ensure URI is provided
 if (!MONGODB_URI) {
   const error = "❌ FATAL: MONGODB_URI is not defined in .env.local";
   console.error(error);
@@ -14,39 +13,52 @@ interface MongooseCache {
   promise: Promise<typeof mongoose> | null;
 }
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections from growing exponentially
- * during API Route usage.
- */
-let cached: MongooseCache = (global as any).__mongoose_cache;
+declare global {
+  // eslint-disable-next-line no-var
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached: MongooseCache = global.mongoose!;
 
 if (!cached) {
-  cached = (global as any).__mongoose_cache = { conn: null, promise: null };
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
 async function dbConnect(): Promise<typeof mongoose> {
-  // If connection is already established, return it
-  if (cached.conn) {
+  if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
-  // If a connection promise is in progress, wait for it
+  if (cached.conn && mongoose.connection.readyState !== 1) {
+    console.warn("[DB] ⚠️ Stale connection detected. Resetting...");
+    cached.conn = null;
+    cached.promise = null;
+  }
+
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      family: 4, // Use IPv4, some modern systems have trouble with IPv6 lookups for Atlas
+      family: 4,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      heartbeatFrequencyMS: 30000,
     };
 
     console.log("[DB] ⚡ INITIALIZING: Connecting to MongoDB Atlas...");
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => {
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then(async (m) => {
       console.log("[DB] ✅ SUCCESS: Connected to MongoDB Atlas");
+      try {
+        await m.connection.db?.admin().command({ ping: 1 });
+        console.log("[DB] 💓 Heartbeat: Atlas responding OK");
+      } catch {
+        console.warn("[DB] ⚠️ Initial heartbeat ping failed.");
+      }
       return m;
     }).catch((err) => {
       console.error("[DB] ❌ FAILURE: Connection could not be established:", err.message);
-      cached.promise = null; // Reset on failure
+      cached.promise = null;
       throw err;
     });
   }
@@ -54,9 +66,9 @@ async function dbConnect(): Promise<typeof mongoose> {
   try {
     cached.conn = await cached.promise;
     return cached.conn;
-  } catch (e: any) {
+  } catch (err) {
     cached.promise = null;
-    throw e;
+    throw err;
   }
 }
 

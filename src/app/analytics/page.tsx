@@ -1,22 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import { Activity, Users, Globe2, Loader2, Link as IconLink } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+interface GlobalStats {
+  totalUsers: number;
+  totalSessions: number;
+  conversionRate: string;
+  averageEngagement: string;
+}
+
 export default function AnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [globalStats, setGlobalStats] = useState<any>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      fetchGlobalStats();
-    }
-  }, [authLoading, user]);
-
-  const fetchGlobalStats = async () => {
+  const fetchGlobalStats = useCallback(async () => {
     setIsLoading(true);
     const token = localStorage.getItem("sentient_token") || "";
     try {
@@ -25,11 +25,18 @@ export default function AnalyticsPage() {
       if (data.success) {
         setGlobalStats(data.data);
       }
-    } catch (err) {
+    } catch {
+      // recovery
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchGlobalStats();
+    }
+  }, [authLoading, user, fetchGlobalStats]);
 
   if (authLoading || (!user)) return null;
 

@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const name = body.name?.trim();
     const email = body.email?.trim().toLowerCase();
-    const password = body.password?.trim();
+    // Do NOT trim the password — the raw value is what gets hashed and must match on login.
+    const password = body.password;
 
     if (!name || !email || !password) {
       return jsonResponse(false, "Missing required fields", null, 400);
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       token, // provided for clients not utilizing cookies
     }, 201);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Signup error:", error);
     return jsonResponse(false, "Internal server error", null, 500);
   }

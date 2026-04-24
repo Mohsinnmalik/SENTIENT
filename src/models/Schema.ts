@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 // --- USER ---
 export interface IUser extends Document {
@@ -65,7 +65,10 @@ export interface ISession extends Document {
   productId: mongoose.Types.ObjectId;
   startedAt: Date;
   endedAt?: Date;
-  status: "active" | "completed";
+  // FIX 7: status includes ENDING for race-condition-safe shutdown
+  status: "active" | "ending" | "completed";
+  // FIX 7: flag to completely separate demo data from real analytics
+  isDemoSession: boolean;
 }
 
 const SessionSchema = new Schema<ISession>({
@@ -73,7 +76,8 @@ const SessionSchema = new Schema<ISession>({
   productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   startedAt: { type: Date, default: Date.now },
   endedAt: { type: Date },
-  status: { type: String, enum: ["active", "completed"], default: "active" },
+  status: { type: String, enum: ["active", "ending", "completed"], default: "active" },
+  isDemoSession: { type: Boolean, default: false },
 });
 
 // --- ANSWER ---
@@ -121,6 +125,16 @@ export interface ISessionReport extends Document {
   isDemo: boolean;
   confidenceLevel: "High" | "Medium" | "Low";
   keySignals: string[];
+  // FIX 3: capture how reliable behavioral data was
+  detectionQuality: "full" | "face_only" | "no_camera" | "failed";
+  // FIX 6: compressed score summary (replaces raw snapshots)
+  scoreSummary?: {
+    min: number;
+    max: number;
+    average: number;
+    standardDeviation: number;
+    expressionFrequency: Record<string, number>;
+  };
   createdAt: Date;
 }
 
@@ -140,6 +154,23 @@ const SessionReportSchema = new Schema<ISessionReport>({
   isDemo: { type: Boolean, default: false },
   confidenceLevel: { type: String, enum: ["High", "Medium", "Low"], default: "Medium" },
   keySignals: { type: [String], default: [] },
+  // FIX 3
+  detectionQuality: {
+    type: String,
+    enum: ["full", "face_only", "no_camera", "failed"],
+    default: "full",
+  },
+  // FIX 6
+  scoreSummary: {
+    type: new Schema({
+      min: Number,
+      max: Number,
+      average: Number,
+      standardDeviation: Number,
+      expressionFrequency: { type: Map, of: Number },
+    }, { _id: false }),
+    default: null,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -71,6 +71,6 @@ export async function clearAuthCookie() {
   cookieStore.delete("auth_token");
 }
 
-export function jsonResponse(success: boolean, message: string, data: any = null, status: number = 200) {
+export function jsonResponse(success: boolean, message: string, data: unknown = null, status: number = 200) {
   return NextResponse.json({ success, message, data }, { status });
 }
