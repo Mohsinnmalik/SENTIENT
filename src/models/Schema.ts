@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 // --- USER ---
-export interface IUser extends Document {
+interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
@@ -16,7 +16,7 @@ const UserSchema = new Schema<IUser>({
 });
 
 // --- PRODUCT ---
-export interface IProduct extends Document {
+interface IProduct extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
   type: string;
@@ -41,7 +41,7 @@ const ProductSchema = new Schema<IProduct>({
 });
 
 // --- TOOLKIT ---
-export interface IToolkit extends Document {
+interface IToolkit extends Document {
   userId: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   reviewQuestions: string[];
@@ -60,7 +60,7 @@ const ToolkitSchema = new Schema<IToolkit>({
 });
 
 // --- SESSION ---
-export interface ISession extends Document {
+interface ISession extends Document {
   userId: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   startedAt: Date;
@@ -81,7 +81,7 @@ const SessionSchema = new Schema<ISession>({
 });
 
 // --- ANSWER ---
-export interface IAnswer extends Document {
+interface IAnswer extends Document {
   userId: mongoose.Types.ObjectId;
   sessionId: mongoose.Types.ObjectId;
   question: string;
@@ -109,7 +109,7 @@ const Session = mongoose.models.Session || mongoose.model<ISession>("Session", S
 const Answer = mongoose.models.Answer || mongoose.model<IAnswer>("Answer", AnswerSchema);
 
 // --- SESSION REPORT ---
-export interface ISessionReport extends Document {
+interface ISessionReport extends Document {
   userId: mongoose.Types.ObjectId;
   sessionId: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;

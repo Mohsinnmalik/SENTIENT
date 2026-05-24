@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import dbConnect from "@/lib/db";
 import { Product } from "@/models/Schema";
 import { getAuthUser, jsonResponse } from "@/lib/auth";
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       name,
       type,
       description,
-      reviewFocus: body.reviewFocus || [],
+      reviewFocus: body.focusAreas || body.reviewFocus || [],
       targetAudience: body.targetAudience || "",
       buyerCriteria: body.buyerCriteria || "",
       investorCriteria: body.investorCriteria || ""

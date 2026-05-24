@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   typescript: {
     // I have already verified type-safety locally. 
     // Disabling during build to prevent Vercel memory hangs.

@@ -12,10 +12,10 @@ export function NeuralSensorPortal() {
   const [hasStarted, setHasStarted] = useState(false);
   const pathname = usePathname();
   
-  const { videoRef, stats } = useNeuralEngine(hasStarted);
+  const { videoRef, stats, detectionQuality } = useNeuralEngine(hasStarted);
 
-  // Auto-hide portal on session page to avoid overlap with full analyzer
-  const isSessionPage = pathname.includes("/session/");
+  // Auto-hide portal on session page and auth/landing pages
+  const isSessionPage = pathname.includes("/session/") || pathname === "/" || pathname === "/login" || pathname === "/signup";
   
   if (isSessionPage) return null;
 
@@ -130,7 +130,9 @@ export function NeuralSensorPortal() {
                 >
                    <div className="flex justify-between items-center text-[9px] font-bold pb-2 border-b border-white/10">
                       <span className="text-slate-400">Spatial Presence</span>
-                      <span className="text-green-400">High</span>
+                      <span className={detectionQuality === 'full' ? 'text-green-400' : 'text-amber-400'}>
+                        {detectionQuality === 'full' ? 'High' : detectionQuality === 'face_only' ? 'Medium' : 'Low'}
+                      </span>
                    </div>
                    <div className="pt-2">
                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">

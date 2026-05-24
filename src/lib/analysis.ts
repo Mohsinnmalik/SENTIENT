@@ -289,13 +289,3 @@ function buildEmptyResult(): AnalysisResult {
   };
 }
 
-// ── Standalone Sentiment (real-time bar) ──────────────────────────────────────
-
-export function calculateSentiment(transcript: string): number {
-  const lower = transcript.toLowerCase();
-  let score = 0;
-  POSITIVE_PATTERNS.forEach(p => { if (lower.includes(p)) score += 1; });
-  NEGATIVE_PATTERNS.forEach(p => { if (lower.includes(p)) score -= 1; });
-  DEALBREAKER_PATTERNS.forEach(p => { if (lower.includes(p)) score -= 2; });
-  return score;
-}

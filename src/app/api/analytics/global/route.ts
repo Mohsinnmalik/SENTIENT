@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
-import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
-import { SessionReport, Product, Session, User } from "@/models/Schema";
+import { SessionReport, Session, User } from "@/models/Schema";
 import { getAuthUser, jsonResponse } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -18,8 +17,9 @@ export async function GET(req: NextRequest) {
     // Aggregations using MongoDB Pipelines
     const [userCount, sessionCount, reportStats] = await Promise.all([
        User.countDocuments(),
-       Session.countDocuments(),
+       Session.countDocuments({ isDemo: { $ne: true } }),
        SessionReport.aggregate([
+          { $match: { isDemo: { $ne: true } } },
           {
             $group: {
               _id: null,

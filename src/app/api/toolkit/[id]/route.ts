@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import dbConnect from "@/lib/db";
 import { Toolkit, Product } from "@/models/Schema";
 import { getAuthUser, jsonResponse } from "@/lib/auth";
@@ -44,22 +44,27 @@ export async function GET(
         if (id.match(/^[0-9a-fA-F]{24}$/)) {
           const product = await Product.findOne({ _id: id, userId: user.userId });
           if (product) {
-            toolkit = await Toolkit.create({
-              userId: user.userId,
-              productId: product._id,
-              reviewQuestions: [
-                "How would you describe the overall build quality of this product?",
-                "Which specific feature stood out to you the most during your initial use?",
-                "In what scenario would you find this product most indispensable?",
-                "On a scale of 1-10, how intuitive was the initial setup process?",
-                "What is the one thing you would change to improve the user experience?"
-              ],
-              qualifierQuestions: [
-                "Are you currently in the market for a solution of this type?",
-                "Who else would you recommend this product to?"
-              ],
-              scoringCriteria: "Composite score based on verbal sentiment and behavioral engagement metrics."
-            });
+            const existing = await Toolkit.findOne({ productId: product._id });
+            if (existing) {
+              toolkit = existing;
+            } else {
+              toolkit = await Toolkit.create({
+                userId: user.userId,
+                productId: product._id,
+                reviewQuestions: [
+                  "How would you describe the overall build quality of this product?",
+                  "Which specific feature stood out to you the most during your initial use?",
+                  "In what scenario would you find this product most indispensable?",
+                  "On a scale of 1-10, how intuitive was the initial setup process?",
+                  "What is the one thing you would change to improve the user experience?"
+                ],
+                qualifierQuestions: [
+                  "Are you currently in the market for a solution of this type?",
+                  "Who else would you recommend this product to?"
+                ],
+                scoringCriteria: "Composite score based on verbal sentiment and behavioral engagement metrics."
+              });
+            }
             toolkit = await Toolkit.findById(toolkit._id).populate("productId");
           }
         }

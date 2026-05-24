@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, Save, Sparkles, Loader2, Info, ChevronRight, Terminal } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, Info, ChevronRight, Terminal } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 const PRODUCT_TYPES = ["Mobile Phone", "Smart Watch", "Earbuds", "Laptop", "Camera", "Gadget", "Wearable", "Other"];
@@ -79,7 +77,7 @@ export default function SetupPage() {
       return toolkitResult.data;
     };
 
-    toast.promise(promise(), {
+    toast.promise(promise().finally(() => setIsLoading(false)), {
       loading: "Synthesizing intelligence array...",
       success: (toolkit) => {
         router.push(`/toolkit/${toolkit._id}`);
@@ -87,8 +85,6 @@ export default function SetupPage() {
       },
       error: (err) => err.message || "Compilation failed.",
     });
-
-    setIsLoading(false);
   };
 
   if (!hasMounted) return null;

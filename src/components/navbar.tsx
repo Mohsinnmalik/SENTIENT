@@ -64,7 +64,7 @@ export function Navbar() {
               href={link.href}
               className={cn(
                 "text-sm font-black uppercase tracking-widest transition-colors hover:text-primary",
-                pathname === link.href ? "text-primary" : "text-muted-foreground"
+                (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)) ? "text-primary" : "text-muted-foreground"
               )}
             >
               {link.label}

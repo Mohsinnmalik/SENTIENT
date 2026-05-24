@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    await req.json();
     
     // Simulate some network delay
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       ],
       scoring_criteria: "High intent is defined by frequent use cases and immediate purchase plans. Low intent is indicated by curiosity without real pain points."
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to generate" }, { status: 500 });
   }
 }

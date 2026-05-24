@@ -24,11 +24,11 @@ export async function signToken(payload: TokenPayload): Promise<string> {
   });
 }
 
-export async function verifyToken(token: string): Promise<TokenPayload | null> {
+async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
     const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

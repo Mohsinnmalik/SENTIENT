@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, StopCircle, Zap, Activity,
+  ArrowLeft, Zap, Activity,
   Brain, Clock, Volume2, MicOff, AlertCircle, Loader2, ChevronRight,
   Mic, PauseCircle, WifiOff
 } from "lucide-react";
@@ -15,8 +15,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CameraAnalyzer from "@/components/camera-analyzer";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { analyzeTranscript, calculateSentiment } from "@/lib/analysis";
-import type { DetectionQuality } from "@/hooks/useNeuralEngine";
+import { analyzeTranscript } from "@/lib/analysis";
+
 
 type Phase = "idle" | "active" | "analyzing";
 
@@ -34,13 +34,12 @@ export default function SessionPage() {
   const [behaviourEvents, setBehaviourEvents] = useState<string[]>([]);
   const [signal, setSignal] = useState("Neutral");
   const [elapsed, setElapsed] = useState(0);
-  const [detectionQuality] = useState<DetectionQuality>("full");
+  const [detectionQuality, setDetectionQuality] = useState<"full" | "face_only" | "no_camera" | "failed" | "waiting">("full");
   const [isEnding, setIsEnding] = useState(false);
   
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
-  const [sentimentValue, setSentimentValue] = useState(0);
   const pendingWritesRef = useRef<Promise<Response>[]>([]);
 
   const {
@@ -50,7 +49,11 @@ export default function SessionPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/session?id=${id}`);
+      const token = localStorage.getItem("sentient_token") || "";
+      const res = await fetch(`/api/session?id=${id}`, {
+        headers: { "Authorization": `Bearer ${token}` },
+        credentials: "include",
+      });
       const result = await res.json();
       if (result.success) {
         setToolkit(result.data.toolkit);
@@ -64,7 +67,6 @@ export default function SessionPage() {
   }, [id]);
 
   useEffect(() => { 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     fetchData(); 
   }, [fetchData]);
@@ -73,9 +75,6 @@ export default function SessionPage() {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [behaviourEvents]);
 
-  useEffect(() => {
-    setSentimentValue(calculateSentiment(transcript));
-  }, [transcript]);
 
   useEffect(() => {
     if (phase === "active") {
@@ -91,9 +90,10 @@ export default function SessionPage() {
     setBehaviourEvents(prev => [...prev.slice(-9), `[${ts}] ${event}`]);
   }, []);
 
-  const handleScoreUpdate = useCallback((score: number, sig: string) => {
+  const handleScoreUpdate = useCallback((score: number, sig: string, dq: "full" | "face_only" | "no_camera" | "failed" | "waiting" = "full") => {
     setBehaviourScore(score);
     setSignal(sig);
+    setDetectionQuality(dq);
   }, []);
 
   const handleStart = () => {
@@ -383,9 +383,7 @@ export default function SessionPage() {
                         onScoreUpdate={handleScoreUpdate} 
                         onEventLog={addEvent} 
                         demoState={demoState} 
-                        transcriptLength={transcript.split(/\s+/).filter(Boolean).length}
-                        sentimentValue={sentimentValue}
-                        showOverlay={false}
+                        active={phase === "active"}
                       />
                    </div>
 
@@ -397,7 +395,7 @@ export default function SessionPage() {
                                {isListening ? 'STREAMING' : 'STANDBY'}
                             </Badge>
                          </CardHeader>
-                         <CardContent className="p-8 flex-1 overflow-y-auto max-h-[300px] scrollbar-hide">
+                         <CardContent className="p-8 flex-1 overflow-y-auto max-h-[300px]">
                            {!transcript && !interimTranscript ? (
                              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-20">
                                 <Volume2 className="h-10 w-10 text-slate-400" />
@@ -478,7 +476,7 @@ export default function SessionPage() {
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        key={i}
+                        key={`${e}-${i}`}
                         className="text-[10px] font-mono p-3 rounded-xl bg-white/[0.03] border border-white/5 text-slate-400 leading-relaxed"
                       >
                          <span className="text-primary/60 font-black mr-2">LOG:</span>

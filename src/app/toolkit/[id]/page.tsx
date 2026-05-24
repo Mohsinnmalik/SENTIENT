@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 
 import { useRouter, useParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, Play, TerminalSquare, AlertCircle, Quote, Loader2, Cpu, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 
 
 interface ToolkitData {
@@ -21,7 +20,7 @@ interface ToolkitData {
   };
   reviewQuestions: string[];
   qualifierQuestions: string[];
-  scoringCriteria: string[];
+  scoringCriteria: string;
 }
 
 export default function ToolkitPage() {
@@ -166,7 +165,7 @@ export default function ToolkitPage() {
                 {reviewQuestions.map((q: string, i: number) => (
                   <motion.div key={i} variants={item} className="group flex gap-6 p-6 rounded-3xl bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300">
                      <div className="h-12 w-12 shrink-0 rounded-full bg-[#04060f] border border-white/10 flex items-center justify-center text-primary font-black shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]">
-                       0{i + 1}
+                       {String(i + 1).padStart(2, "0")}
                      </div>
                      <p className="text-lg md:text-xl font-medium leading-normal text-slate-300 group-hover:text-white pt-2">
                        &quot;{q}&quot;

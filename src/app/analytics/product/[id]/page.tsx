@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
-  ArrowLeft, Activity, Clock, Users, 
+  ArrowLeft, Activity, Clock, 
   MessageSquare, Calendar, TrendingUp, TrendingDown,
-  BrainCircuit, Loader2, AlertCircle, Info, Sparkles,
+  BrainCircuit, AlertCircle, Info, Sparkles,
   Target, ShieldCheck, Zap, ArrowUpRight, BarChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -198,7 +198,7 @@ export default function PremiumAnalyticsPage() {
               <div>
                 <div className="flex items-center gap-3 mb-1">
                    <h1 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter">{product.name}</h1>
-                   <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black px-3 py-1 rounded-full">{product.type}</Badge>
+                   <StatBadge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black px-3 py-1 rounded-full">{product.type}</StatBadge>
                 </div>
                 <p className="text-sm text-slate-500 font-bold tracking-widest uppercase flex items-center gap-2">
                    <Activity size={14} className="text-primary" /> Intelligence Core Report
@@ -410,5 +410,5 @@ export default function PremiumAnalyticsPage() {
   );
 }
 
-const Badge = ({ children, className }: { children: React.ReactNode; className?: string }) => 
+const StatBadge = ({ children, className }: { children: React.ReactNode; className?: string }) => 
   <span className={`inline-flex px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${className || ''}`}>{children}</span>;

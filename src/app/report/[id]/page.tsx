@@ -255,16 +255,22 @@ export default function PremiumReportPage() {
                <AnimatePresence>
                  {eventsOpen && (
                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {report.behaviourEvents.map((event, i) => (
-                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} key={i} className="bg-white/[0.03] border border-white/5 p-5 rounded-2xl flex gap-4 group transition-all hover:border-primary/20 hover:bg-white/[0.05]">
-                           <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shrink-0 group-hover:scale-110 transition-transform">
-                              <Brain size={14} className="text-slate-500 group-hover:text-primary transition-colors" />
-                           </div>
-                           <p className="text-xs font-mono text-slate-400 group-hover:text-slate-200 transition-colors leading-relaxed">
-                             {event}
-                           </p>
-                        </motion.div>
-                      ))}
+                      {report.behaviourEvents.length === 0 ? (
+                        <div className="col-span-1 md:col-span-2 text-center py-6 border border-white/5 border-dashed rounded-2xl bg-white/[0.02]">
+                           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No behaviour events recorded.</p>
+                        </div>
+                      ) : (
+                        report.behaviourEvents.map((event: string, i: number) => (
+                          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} key={i} className="bg-white/[0.03] border border-white/5 p-5 rounded-2xl flex gap-4 group transition-all hover:border-primary/20 hover:bg-white/[0.05]">
+                             <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shrink-0 group-hover:scale-110 transition-transform">
+                                <Brain size={14} className="text-slate-500 group-hover:text-primary transition-colors" />
+                             </div>
+                             <p className="text-xs font-mono text-slate-400 group-hover:text-slate-200 transition-colors leading-relaxed">
+                               {event}
+                             </p>
+                          </motion.div>
+                        ))
+                      )}
                    </motion.div>
                  )}
                </AnimatePresence>
@@ -320,7 +326,7 @@ export default function PremiumReportPage() {
                          <CheckCircle2 className="mr-2 h-4 w-4" /> Archive Report
                       </Button>
                    </Link>
-                   <Link href="/session/new" className="w-full">
+                   <Link href="/dashboard" className="w-full">
                       <Button variant="outline" className="h-14 w-full rounded-2xl bg-white/5 border-white/10 text-white font-black uppercase text-[10px] tracking-widest hover:bg-white/10 group">
                          <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" /> Neural Reset
                       </Button>

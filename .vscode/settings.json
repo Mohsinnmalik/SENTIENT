@@ -2,5 +2,17 @@
   "css.lint.unknownAtRules": "ignore",
   "tailwindCSS.experimental.classRegex": [
     ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"]
-  ]
+  ],
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/tsconfig.tsbuildinfo": true
+  },
+  "files.exclude": {
+    "**/.next": true,
+    "**/tsconfig.tsbuildinfo": true
+  },
+  "files.watcherExclude": {
+    "**/.next/**": true
+  }
 }

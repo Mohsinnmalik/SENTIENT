@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Brain, Eye, Zap, Target, BarChart, Smile, ShieldCheck, Mic } from "lucide-react";
+import { Brain, Eye, Zap, Target, BarChart, Mic } from "lucide-react";
 
 const FEATURES = [
   {

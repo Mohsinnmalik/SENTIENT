@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import dbConnect from "@/lib/db";
 import { Toolkit, Product } from "@/models/Schema";
 import { getAuthUser, jsonResponse } from "@/lib/auth";

@@ -1,0 +1,3 @@
+# Exclude next.js build folder and node_modules from security scanning
+**/.next/**
+**/node_modules/**

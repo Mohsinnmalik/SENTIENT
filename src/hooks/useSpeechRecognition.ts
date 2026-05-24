@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 
 // --- Type definitions for Web Speech API ---
 interface SpeechRecognitionEvent extends Event {
@@ -34,7 +35,7 @@ declare global {
   }
 }
 
-export type SpeechStatus = "listening" | "paused" | "reconnecting" | "stopped" | "unsupported";
+type SpeechStatus = "listening" | "paused" | "reconnecting" | "stopped" | "unsupported";
 
 export interface SpeechHook {
   transcript: string;
@@ -94,7 +95,7 @@ export function useSpeechRecognition(): SpeechHook {
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = "en-US";
+    rec.lang = "en-IN"; // Support Hinglish natively
     rec.maxAlternatives = 1;
 
     rec.onstart = () => {
@@ -120,9 +121,12 @@ export function useSpeechRecognition(): SpeechHook {
       let final = "";
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) final += r[0].transcript + " ";
-        else interim += r[0].transcript;
+        const r = e.results.item(i);
+        if (!r) continue;
+        const alternative = r.item(0);
+        if (!alternative) continue;
+        if (r.isFinal) final += alternative.transcript + " ";
+        else interim += alternative.transcript;
       }
       if (final) {
         setTranscript((prev) => {
@@ -171,6 +175,9 @@ export function useSpeechRecognition(): SpeechHook {
       } else {
         setIsListening(false);
         setStatus("stopped");
+        if (restartAttemptsRef.current >= 50) {
+          toast.error("Speech recognition disconnected frequently. Please check your mic connection.");
+        }
       }
     };
 
