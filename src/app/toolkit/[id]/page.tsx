@@ -82,12 +82,11 @@ export default function ToolkitPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#04060f] flex flex-col items-center justify-center space-y-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-6 text-foreground">
          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
             <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
          </div>
-         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 animate-pulse">Decrypting Toolkit Core...</p>
+         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Decrypting Toolkit Core...</p>
       </div>
     );
   }
@@ -98,40 +97,38 @@ export default function ToolkitPage() {
   const item = { hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } };
 
   return (
-    <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans pb-24">
-       {/* Background */}
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative overflow-hidden font-sans pb-24">
+       {/* Background Dot grid */}
        <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-1/4 w-[700px] h-[700px] bg-primary/5 blur-[150px] rounded-full mix-blend-screen" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_0%,rgba(99,102,241,0.05),transparent)] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-12 relative z-10 space-y-12">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b-3 border-border pb-8">
           <div className="space-y-6">
             <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="pl-0 hover:bg-transparent text-slate-400 hover:text-white group">
+              <Button variant="ghost" size="sm" className="pl-0 hover:bg-transparent text-muted-foreground hover:text-foreground group">
                 <ArrowLeft className="mr-3 h-4 w-4 transition-transform group-hover:-translate-x-1" />
                 RETURN TO GRID
               </Button>
             </Link>
             <div>
                <div className="flex items-center gap-4 mb-3">
-                 <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">{product.name}</h1>
-                 <div className="px-3 py-1 bg-white/5 border border-white/10 rounded uppercase text-[10px] font-black tracking-[0.2em] text-slate-300">
+                 <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">{product.name}</h1>
+                 <div className="px-3 py-1 bg-accent text-accent-foreground border-2 border-border rounded uppercase text-[10px] font-black tracking-[0.2em] shadow-[1.5px_1.5px_0px_0px_var(--border)]">
                    {product.type}
                  </div>
                </div>
-               <p className="text-lg text-slate-400 font-medium flex items-center gap-3">
-                 <Cpu className="h-5 w-5 text-primary" /> Active Neural Array
+               <p className="text-lg text-muted-foreground font-bold flex items-center gap-3">
+                 <Cpu className="h-5 w-5 text-secondary" /> Active Neural Array
                </p>
             </div>
           </div>
           
           <Button 
             onClick={handleStartSession} disabled={isStartingSession}
-            className="h-16 px-10 rounded-[2rem] bg-gradient-to-r from-primary to-indigo-600 hover:from-primary text-lg font-black tracking-widest uppercase text-white shadow-[0_0_40px_rgba(99,102,241,0.2)] transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+            className="h-16 px-10 bg-[#ff007a] text-white border-3 border-border shadow-[4px_4px_0px_0px_var(--border)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--border)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_var(--border)] transition-all text-lg font-black tracking-widest uppercase"
           >
             {isStartingSession ? (
               <span className="flex items-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ESTABLISHING LINK...</span>
@@ -145,29 +142,27 @@ export default function ToolkitPage() {
           
           {/* Main Matrix (8 cols) */}
           <div className="lg:col-span-8 space-y-8">
-            <div className="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-8 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
-              
-              <div className="p-10 border-b border-white/[0.03] flex items-center justify-between">
+            <div className="bg-card border-3 border-border rounded-[var(--radius)] overflow-hidden relative shadow-[4px_4px_0px_0px_var(--border)]">
+              <div className="p-10 border-b-3 border-border flex items-center justify-between">
                 <div>
-                   <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-2">
+                   <h2 className="text-2xl font-black text-foreground flex items-center gap-3 mb-2">
                      <TerminalSquare className="h-6 w-6 text-primary" /> Interrogation Matrix
                    </h2>
-                   <p className="text-slate-500 text-sm font-medium">Core neural questions primed for the live session.</p>
+                   <p className="text-muted-foreground text-sm font-medium">Core neural questions primed for the live session.</p>
                 </div>
-                <div className="h-14 w-14 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center">
-                  <span className="text-xl font-black text-white leading-none">{reviewQuestions.length}</span>
-                  <span className="text-[8px] font-black tracking-widest uppercase text-slate-500">Nodes</span>
+                <div className="h-14 w-14 rounded-[var(--radius)] bg-primary text-primary-foreground border-2 border-border flex flex-col items-center justify-center shadow-[2px_2px_0px_0px_var(--border)]">
+                  <span className="text-xl font-black leading-none">{reviewQuestions.length}</span>
+                  <span className="text-[8px] font-black tracking-widest uppercase opacity-70">Nodes</span>
                 </div>
               </div>
 
               <div className="p-10 space-y-6">
                 {reviewQuestions.map((q: string, i: number) => (
-                  <motion.div key={i} variants={item} className="group flex gap-6 p-6 rounded-3xl bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300">
-                     <div className="h-12 w-12 shrink-0 rounded-full bg-[#04060f] border border-white/10 flex items-center justify-center text-primary font-black shadow-[inset_0_0_15px_rgba(99,102,241,0.2)]">
+                  <motion.div key={i} variants={item} className="group flex gap-6 p-6 rounded-[var(--radius)] bg-card border-3 border-border hover:bg-muted transition-all shadow-[2px_2px_0px_0px_var(--border)]">
+                     <div className="h-12 w-12 shrink-0 rounded-[var(--radius)] bg-accent text-accent-foreground border-2 border-border flex items-center justify-center font-black shadow-[2px_2px_0px_0px_var(--border)]">
                        {String(i + 1).padStart(2, "0")}
                      </div>
-                     <p className="text-lg md:text-xl font-medium leading-normal text-slate-300 group-hover:text-white pt-2">
+                     <p className="text-lg md:text-xl font-black leading-normal text-foreground pt-2">
                        &quot;{q}&quot;
                      </p>
                   </motion.div>
@@ -180,13 +175,13 @@ export default function ToolkitPage() {
           <div className="lg:col-span-4 space-y-8">
             
             {/* Qualifier Block */}
-            <div className="bg-white/[0.01] border border-white/[0.03] rounded-[2rem] p-8">
-              <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6">
-                <CheckSquare className="h-5 w-5 text-green-400" /> Filter Criteria
+            <div className="bg-card border-3 border-border rounded-[var(--radius)] p-8 shadow-[4px_4px_0px_0px_var(--border)]">
+              <h3 className="text-lg font-black text-foreground flex items-center gap-3 mb-6">
+                <CheckSquare className="h-5 w-5 text-[#2ee59d]" /> Filter Criteria
               </h3>
               <div className="space-y-4">
                 {qualifierQuestions.map((q: string, i: number) => (
-                  <div key={i} className="text-sm p-5 rounded-2xl bg-green-500/5 border border-green-500/10 text-green-100/70 font-medium">
+                  <div key={i} className="text-sm p-5 rounded-[var(--radius)] bg-[#2ee59d]/10 border-2 border-border text-foreground font-bold shadow-[2px_2px_0px_0px_var(--border)]">
                     {q}
                   </div>
                 ))}
@@ -194,25 +189,24 @@ export default function ToolkitPage() {
             </div>
 
             {/* AI Logic Block */}
-            <div className="bg-primary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden group">
-               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-               <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6 relative z-10">
+            <div className="bg-card border-3 border-border rounded-[var(--radius)] p-8 relative overflow-hidden group shadow-[4px_4px_0px_0px_var(--border)]">
+               <h3 className="text-lg font-black text-foreground flex items-center gap-3 mb-6 relative z-10">
                  <AlertCircle className="h-5 w-5 text-primary" /> Evaluation Logic
                </h3>
-               <div className="p-5 rounded-2xl bg-[#04060f]/50 border border-white/5 backdrop-blur-md relative z-10 mb-4">
-                 <p className="text-sm leading-relaxed font-semibold text-primary-100 font-mono tracking-tight text-white/80">
+               <div className="p-5 rounded-[var(--radius)] bg-primary text-primary-foreground border-2 border-border relative z-10 mb-4 shadow-[2.5px_2.5px_0px_0px_var(--border)]">
+                 <p className="text-sm leading-relaxed font-bold text-black font-mono tracking-tight">
                    {scoringCriteria}
                  </p>
                </div>
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 relative z-10">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff007a] relative z-10">
                  System logic actively parsing during interaction.
                </p>
             </div>
 
              {/* Safety Notice */}
-            <div className="p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] flex items-start gap-4">
-               <Quote className="h-6 w-6 text-slate-500 shrink-0 mt-1" />
-               <p className="text-xs font-semibold text-slate-400 leading-relaxed uppercase tracking-wider">
+            <div className="p-6 rounded-[var(--radius)] border-3 border-border bg-muted flex items-start gap-4 shadow-[3px_3px_0px_0px_var(--border)]">
+               <Quote className="h-6 w-6 text-muted-foreground shrink-0 mt-1" />
+               <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase tracking-wider">
                  All neural nodes are pre-compiled for minimal bias. Proceed to launch interface when subject is ready.
                </p>
             </div>

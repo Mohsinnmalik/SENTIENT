@@ -41,9 +41,13 @@ export default function AnalyticsPage() {
   if (authLoading || (!user)) return null;
 
   return (
-    <div className="min-h-screen bg-[#04060f] text-slate-200">
-      <div className="max-w-[1200px] mx-auto px-4 py-16">
-        <h1 className="text-4xl font-black mb-8 flex items-center gap-4 text-white">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative overflow-hidden font-sans">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-4 py-16 relative z-10">
+        <h1 className="text-4xl font-black mb-12 flex items-center gap-4 text-foreground">
           <Globe2 className="h-8 w-8 text-primary" />
           Global Neural Analytics
         </h1>
@@ -54,28 +58,28 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center">
-               <Users className="h-8 w-8 text-blue-400 mx-auto mb-4" />
-               <div className="text-sm font-black uppercase text-slate-500 tracking-widest mb-2">Total System Users</div>
-               <div className="text-5xl font-black text-white">{globalStats?.totalUsers || 0}</div>
+             <div className="bg-card border-3 border-border p-8 rounded-[var(--radius)] text-center shadow-[4px_4px_0px_0px_var(--border)]">
+               <Users className="h-8 w-8 text-[#00f0ff] mx-auto mb-4" />
+               <div className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-2">Total System Users</div>
+               <div className="text-5xl font-black text-foreground">{globalStats?.totalUsers || 0}</div>
              </div>
              
-             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center">
-               <Activity className="h-8 w-8 text-green-400 mx-auto mb-4" />
-               <div className="text-sm font-black uppercase text-slate-500 tracking-widest mb-2">Total Sessions</div>
-               <div className="text-5xl font-black text-white">{globalStats?.totalSessions || 0}</div>
+             <div className="bg-card border-3 border-border p-8 rounded-[var(--radius)] text-center shadow-[4px_4px_0px_0px_var(--border)]">
+               <Activity className="h-8 w-8 text-[#2ee59d] mx-auto mb-4" />
+               <div className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-2">Total Sessions</div>
+               <div className="text-5xl font-black text-foreground">{globalStats?.totalSessions || 0}</div>
              </div>
 
-             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center">
-               <IconLink className="h-8 w-8 text-purple-400 mx-auto mb-4" />
-               <div className="text-sm font-black uppercase text-slate-500 tracking-widest mb-2">Conversion Rate</div>
-               <div className="text-5xl font-black text-white">{globalStats?.conversionRate || "0%"}</div>
+             <div className="bg-card border-3 border-border p-8 rounded-[var(--radius)] text-center shadow-[4px_4px_0px_0px_var(--border)]">
+               <IconLink className="h-8 w-8 text-[#ff007a] mx-auto mb-4" />
+               <div className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-2">Conversion Rate</div>
+               <div className="text-5xl font-black text-foreground">{globalStats?.conversionRate || "0%"}</div>
              </div>
 
-             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl text-center">
+             <div className="bg-card border-3 border-border p-8 rounded-[var(--radius)] text-center shadow-[4px_4px_0px_0px_var(--border)]">
                <Activity className="h-8 w-8 text-primary mx-auto mb-4" />
-               <div className="text-sm font-black uppercase text-slate-500 tracking-widest mb-2">Avg Engagement</div>
-               <div className="text-5xl font-black text-white">{globalStats?.averageEngagement || "0.0"}</div>
+               <div className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-2">Avg Engagement</div>
+               <div className="text-5xl font-black text-foreground">{globalStats?.averageEngagement || "0.0"}</div>
              </div>
           </div>
         )}

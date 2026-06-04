@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, BrainCircuit } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -55,10 +56,10 @@ export default function SignupPage() {
   if (!hasMounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#04060f] flex items-center justify-center relative overflow-hidden font-sans">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 blur-[150px] rounded-full mix-blend-screen" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:30px_30px]" />
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative overflow-hidden font-sans flex items-center justify-center">
+      {/* Background Dot grid */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:30px_30px]" />
       </div>
 
       <div className="w-full max-w-md px-4 sm:px-8 relative z-10">
@@ -66,19 +67,16 @@ export default function SignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden"
+          className="bg-card border-3 border-border rounded-[var(--radius)] p-8 sm:p-12 shadow-[6px_6px_0px_0px_var(--border)] relative overflow-hidden"
         >
-          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          
           <div className="text-center space-y-6 mb-10">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-white/[0.03] border border-white/10 relative group">
-              <div className="absolute inset-0 bg-primary/20 blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
-              <BrainCircuit className="h-10 w-10 text-primary relative z-10" />
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[var(--radius)] bg-white border-2 border-border shadow-[2px_2px_0px_0px_var(--border)] relative group overflow-hidden">
+              <Image src="/logo.png" alt="SENTIENT Logo" width={80} height={80} className="h-full w-full object-cover" />
             </div>
             
             <div className="space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-white">New Agent Setup</h1>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
+              <h1 className="text-3xl font-black tracking-tight text-foreground">New Agent Setup</h1>
+              <p className="text-sm font-black text-muted-foreground uppercase tracking-widest">
                 Create Secure Profile
               </p>
             </div>
@@ -91,7 +89,7 @@ export default function SignupPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
+              className="h-14 rounded-[var(--radius)] bg-card border-3 border-border text-base font-bold text-center text-foreground placeholder:text-muted-foreground/60 focus:border-primary transition-all"
             />
             <Input
               type="email"
@@ -99,7 +97,7 @@ export default function SignupPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
+              className="h-14 rounded-[var(--radius)] bg-card border-3 border-border text-base font-bold text-center text-foreground placeholder:text-muted-foreground/60 focus:border-primary transition-all"
             />
              <Input
               type="password"
@@ -107,12 +105,12 @@ export default function SignupPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-base font-bold text-center text-white placeholder:text-slate-600 focus:border-primary/50 focus:ring-primary/20 transition-all"
+              className="h-14 rounded-[var(--radius)] bg-card border-3 border-border text-base font-bold text-center text-foreground placeholder:text-muted-foreground/60 focus:border-primary transition-all"
             />
             
             <Button 
               type="submit" 
-              className="w-full h-14 rounded-2xl bg-primary hover:bg-indigo-600 text-white text-base font-black tracking-widest uppercase transition-all shadow-[0_0_30px_rgba(99,102,241,0.2)] hover:scale-[1.02]" 
+              className="w-full h-14 rounded-[var(--radius)] bg-[#ff007a] text-white border-3 border-border text-base font-black tracking-widest uppercase transition-all shadow-[3px_3px_0px_0px_var(--border)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_var(--border)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_var(--border)]"
               disabled={isLoading}
             >
               <AnimatePresence mode="wait">
@@ -132,7 +130,7 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-8 text-center">
-            <Link href="/login" className="text-xs font-bold text-slate-400 hover:text-white transition-colors">
+            <Link href="/login" className="text-xs font-black text-muted-foreground hover:text-foreground transition-colors">
               Already initialized? Connect here.
             </Link>
           </div>

@@ -8,71 +8,61 @@ const FEATURES = [
     icon: Brain,
     title: "AI Question Engine",
     desc: "Dynamically generates contextual follow-up questions during sessions based on real-time verbal feedback.",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "hover:border-blue-500/20 hover:shadow-blue-500/10",
-    glow: "group-hover:shadow-blue-500/20",
+    color: "text-primary",
   },
   {
     icon: Eye,
     title: "Expression Detection",
     desc: "Tracks micro-expressions and facial signals in real-time using face-api.js to gauge true emotional state.",
-    color: "text-primary",
-    bg: "bg-primary/10",
-    border: "hover:border-primary/20 hover:shadow-primary/10",
-    glow: "group-hover:shadow-primary/20",
+    color: "text-secondary",
   },
   {
     icon: Mic,
     title: "Voice Sentiment",
     desc: "Captures continuous speech, transcribes it, and scores verbal sentiment using intelligent keyword analysis.",
-    color: "text-violet-400",
-    bg: "bg-violet-500/10",
-    border: "hover:border-violet-500/20",
-    glow: "",
+    color: "text-accent",
   },
   {
     icon: Target,
     title: "Buyer Prediction",
     desc: "Classifies every visitor as Buyer, Interested, or Browsing using a composite verbal + behavioural model.",
-    color: "text-green-400",
-    bg: "bg-green-500/10",
-    border: "hover:border-green-500/20",
-    glow: "",
+    color: "text-primary",
   },
   {
     icon: Zap,
     title: "Real-Time Scoring",
     desc: "Instant multi-channel assessment of verbal and non-verbal data to calculate live engagement intensity.",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "hover:border-amber-500/20",
-    glow: "",
+    color: "text-secondary",
   },
   {
     icon: BarChart,
     title: "Intelligent Reports",
     desc: "Every session generates a full report: scores, buyer type, AI summary, transcript and behaviour timeline.",
-    color: "text-pink-400",
-    bg: "bg-pink-500/10",
-    border: "hover:border-pink-500/20",
-    glow: "",
+    color: "text-accent",
   },
+];
+
+const CARD_STYLES = [
+  { bg: "bg-white text-black", iconBg: "bg-[#ffe600] text-black" },
+  { bg: "bg-[#ff007a] text-white", iconBg: "bg-white text-black" },
+  { bg: "bg-[#00f0ff] text-black", iconBg: "bg-[#ff007a] text-white" },
+  { bg: "bg-[#f4efe6] text-black", iconBg: "bg-[#ffe600] text-black" },
+  { bg: "bg-white text-black", iconBg: "bg-[#ff007a] text-white" },
+  { bg: "bg-[#ff007a] text-white", iconBg: "bg-[#00f0ff] text-black" },
 ];
 
 export function FeaturesGrid() {
   return (
-    <section className="py-32 relative overflow-hidden">
-      {/* Background accent */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.06),transparent)] pointer-events-none" />
+    <section className="py-24 relative overflow-hidden border-b-3 border-black bg-[#ffe600] text-black">
+      <div className="absolute inset-0 bg-[linear-gradient(#000000_1px,transparent_1px),linear-gradient(90deg,#000000_1px,transparent_1px)] bg-[size:48px_48px] opacity-[0.05] pointer-events-none" />
 
       <div className="container px-4 mx-auto sm:px-8 max-w-7xl">
-        <div className="text-center space-y-4 mb-24">
+        <div className="text-center space-y-4 mb-20">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-[11px] font-black text-primary uppercase tracking-[0.4em]"
+            className="text-[11px] font-black text-black uppercase tracking-[0.4em]"
           >
             Advanced Capabilities
           </motion.div>
@@ -81,23 +71,23 @@ export function FeaturesGrid() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="text-4xl md:text-6xl font-black tracking-tight"
+            className="text-4xl md:text-6xl font-black tracking-tight text-black font-heading"
           >
             Intelligence at
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400"> Every Layer</span>
+            <span className="inline-block px-3 py-1 bg-[#ff007a] text-white border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000000] -rotate-1 ml-2"> Every Layer</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-slate-400 text-lg max-w-2xl mx-auto"
+            className="text-black/80 text-lg max-w-2xl mx-auto font-sans font-bold"
           >
             Everything you need to transform product discovery from a guessing game into a scientific, repeatable process.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((f, i) => (
             <motion.div
               key={i}
@@ -105,14 +95,14 @@ export function FeaturesGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              whileHover={{ y: -8 }}
-              className={`group p-8 rounded-[2rem] border border-white/5 ${f.border} bg-white/[0.02] backdrop-blur-3xl transition-all duration-300 shadow-xl hover:shadow-2xl`}
+              whileHover={{ y: -6 }}
+              className={`group p-8 rounded-[var(--radius)] border-3 border-black transition-all duration-150 shadow-[5px_5px_0px_0px_#000000] hover:shadow-[7px_7px_0px_0px_#000000] ${CARD_STYLES[i % CARD_STYLES.length].bg}`}
             >
-              <div className={`h-14 w-14 rounded-2xl ${f.bg} flex items-center justify-center mb-8 ring-1 ring-white/5 group-hover:scale-110 transition-transform duration-300`}>
-                <f.icon className={`h-7 w-7 ${f.color}`} />
+              <div className={`h-14 w-14 rounded-[var(--radius)] border-2 border-black flex items-center justify-center mb-8 shadow-[2px_2px_0px_0px_#000000] ${CARD_STYLES[i % CARD_STYLES.length].iconBg}`}>
+                <f.icon className="h-7 w-7" />
               </div>
-              <h3 className={`text-xl font-black mb-3 group-hover:${f.color} transition-colors`}>{f.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors">{f.desc}</p>
+              <h3 className="text-xl font-black mb-3 font-heading">{f.title}</h3>
+              <p className="text-sm font-semibold opacity-90 leading-relaxed font-sans">{f.desc}</p>
             </motion.div>
           ))}
         </div>

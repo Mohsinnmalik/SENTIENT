@@ -17,14 +17,11 @@ function LiveDot() {
 
 export function Hero() {
   return (
-    <section className="relative pt-24 pb-40 overflow-hidden">
+    <section className="relative pt-20 pb-32 overflow-hidden border-b-3 border-black bg-[#f4efe6] text-black">
       {/* Layered background */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-15%] w-[60%] h-[60%] rounded-full bg-primary/15 blur-[160px] animate-pulse" />
-        <div className="absolute bottom-[5%] right-[-15%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[160px] animate-pulse [animation-delay:2s]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1px] h-full bg-gradient-to-b from-transparent via-primary/10 to-transparent" />
         {/* Grid overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(#000000_1px,transparent_1px),linear-gradient(90deg,#000000_1px,transparent_1px)] bg-[size:48px_48px] opacity-[0.05]" />
       </div>
 
       <div className="container px-4 mx-auto sm:px-8 max-w-7xl">
@@ -39,11 +36,11 @@ export function Hero() {
               transition={{ duration: 0.5 }}
               className="flex items-center justify-center lg:justify-start gap-3"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-black text-primary tracking-wider uppercase">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-[var(--radius)] bg-[#ffe600] text-black border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000000] text-xs font-black tracking-wider uppercase">
                 <Zap className="h-3 w-3 fill-current" />
                 AI Behaviour Intelligence
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-black text-red-400 tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius)] bg-[#ff3333] text-white border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000000] text-xs font-black tracking-wider">
                 <LiveDot />
                 LIVE
               </div>
@@ -53,11 +50,11 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight leading-[1.08]"
+              className="text-5xl md:text-7xl font-black tracking-tight leading-[1.08] text-black font-heading"
             >
               Read Intent.{" "}
               <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-indigo-400">
+              <span className="inline-block mt-2 bg-[#ff007a] text-white border-3 border-black px-4 py-2 shadow-[4.5px_4.5px_0px_0px_#000000] -rotate-1 hover:rotate-0 transition-transform">
                 Before They Speak.
               </span>
             </motion.h1>
@@ -66,7 +63,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-xl text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed"
+              className="text-lg md:text-xl text-black/70 max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans font-bold"
             >
               SENTIENT fuses facial expression analysis, real-time voice sentiment, and
               behavioural tracking into one unified buyer-intent engine.
@@ -81,7 +78,7 @@ export function Hero() {
               <Link href="/login">
                 <Button
                   size="lg"
-                  className="h-14 px-8 text-base font-black rounded-2xl gap-2 shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                  className="h-14 px-8 text-base gap-2 bg-[#ffe600] text-black border-3 border-black shadow-[4px_4px_0px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_#000000] transition-all"
                 >
                   <Play className="h-5 w-5 fill-current" />
                   Start Analyzing
@@ -91,7 +88,7 @@ export function Hero() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-14 px-8 text-base font-black rounded-2xl gap-2 border-white/10 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-primary/30 transition-all"
+                  className="h-14 px-8 text-base gap-2 bg-white text-black border-3 border-black shadow-[4px_4px_0px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_#000000] transition-all"
                 >
                   View Dashboard
                   <ArrowRight className="h-5 w-5" />
@@ -99,20 +96,20 @@ export function Hero() {
               </Link>
             </motion.div>
 
-            {/* Trust chips */}
+            {/* Trust chips with Figma-style multi-colors */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="flex items-center justify-center lg:justify-start gap-6 pt-4"
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4"
             >
               {[
-                { label: "Face Detection", icon: Eye },
-                { label: "Voice AI", icon: Activity },
-                { label: "Neural Scoring", icon: Cpu },
-              ].map(({ label, icon: Icon }) => (
-                <div key={label} className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
-                  <Icon className="h-3.5 w-3.5 text-primary/60" />
+                { label: "Face Detection", icon: Eye, color: "bg-[#00f0ff] text-black" },
+                { label: "Voice AI", icon: Activity, color: "bg-[#ff007a] text-white" },
+                { label: "Neural Scoring", icon: Cpu, color: "bg-[#2ee59d] text-black" },
+              ].map(({ label, icon: Icon, color }) => (
+                <div key={label} className={`flex items-center gap-2 px-4 py-2 rounded-[var(--radius)] border-2 border-black shadow-[3px_3px_0px_0px_#000000] text-[10px] font-black uppercase tracking-wider ${color}`}>
+                  <Icon className="h-4 w-4" />
                   {label}
                 </div>
               ))}
@@ -122,77 +119,74 @@ export function Hero() {
           {/* ── Right: Live Analysis Card ── */}
           <div className="flex-1 w-full max-w-[480px] mx-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.92, rotateY: -8 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
               className="relative"
             >
-              {/* Glow */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-indigo-500/20 blur-[80px] -z-10 rounded-[3rem]" />
-
-              <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#080c14]/90 backdrop-blur-3xl shadow-[0_32px_80px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/5 p-7 space-y-7">
+              <div className="overflow-hidden rounded-[var(--radius)] border-3 border-black bg-white p-7 space-y-7 shadow-[8px_8px_0px_0px_#000000] text-black">
 
                 {/* Card header */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                <div className="flex items-center justify-between border-b-3 border-black pb-6">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                      <Brain className="h-5 w-5 text-white" />
+                    <div className="h-11 w-11 rounded-[var(--radius)] bg-[#ffe600] border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_0px_#000000]">
+                      <Brain className="h-5 w-5 text-black" />
                     </div>
                     <div>
-                      <div className="text-[10px] font-black text-white/30 uppercase tracking-widest">Live Analysis</div>
-                      <div className="font-bold text-white text-lg leading-tight">UltraWatch Pro V2</div>
+                      <div className="text-[10px] font-black text-black/40 uppercase tracking-widest">{"Live Analysis"}</div>
+                      <div className="font-black text-black text-lg leading-tight">{"UltraWatch Pro V2"}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius)] bg-[#ff3333] text-white border-2 border-black">
                     <LiveDot />
-                    <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Live</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{"Live"}</span>
                   </div>
                 </div>
 
                 {/* Visualizer */}
-                <div className="relative aspect-video rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08)_0,transparent_70%)]" />
-                  <Activity className="h-10 w-10 text-primary/20 animate-pulse" />
+                <div className="relative aspect-video rounded-[var(--radius)] bg-white border-3 border-black flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#ffe600_0,transparent_70%)] opacity-20" />
+                  <Activity className="h-10 w-10 text-black/10 animate-pulse" />
 
                   {/* Scan line */}
                   <motion.div
                     animate={{ top: ["0%", "100%", "0%"] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
-                    className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+                    className="absolute left-0 right-0 h-[2.5px] bg-[#ffe600] border-b border-black"
                   />
 
                   {/* Labels */}
                   <motion.div
-                    animate={{ y: [0, -6, 0] }}
+                    animate={{ y: [0, -4, 0] }}
                     transition={{ repeat: Infinity, duration: 2.2 }}
-                    className="absolute top-3 left-3 px-2.5 py-1.5 rounded-lg bg-green-500/20 border border-green-500/30 backdrop-blur-xl"
+                    className="absolute top-3 left-3 px-2.5 py-1 rounded-[var(--radius)] bg-[#2ee59d] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000000]"
                   >
-                    <span className="text-[10px] font-black text-green-400">😊 Positive Reaction</span>
+                    <span className="text-[9px] font-black uppercase">😊 Positive Reaction</span>
                   </motion.div>
                   <motion.div
-                    animate={{ y: [0, 6, 0] }}
+                    animate={{ y: [0, 4, 0] }}
                     transition={{ repeat: Infinity, duration: 2.8, delay: 0.6 }}
-                    className="absolute bottom-3 right-3 px-2.5 py-1.5 rounded-lg bg-primary/20 border border-primary/30 backdrop-blur-xl"
+                    className="absolute bottom-3 right-3 px-2.5 py-1 rounded-[var(--radius)] bg-[#ff007a] text-white border-2 border-black shadow-[2px_2px_0px_0px_#000000]"
                   >
-                    <span className="text-[10px] font-black text-primary">🔥 High Intent</span>
+                    <span className="text-[9px] font-black uppercase">🔥 High Intent</span>
                   </motion.div>
                 </div>
 
                 {/* Score tiles */}
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: "Verbal Sentiment", val: 8.4, pct: "84%", color: "bg-primary", glow: "shadow-primary/30" },
-                    { label: "Behaviour Score", val: 9.2, pct: "92%", color: "bg-green-500", glow: "shadow-green-500/30" },
+                    { label: "Verbal Sentiment", val: 8.4, pct: "84%", color: "bg-[#ffe600]" },
+                    { label: "Behaviour Score", val: 9.2, pct: "92%", color: "bg-[#00f0ff]" },
                   ].map((stat, i) => (
-                    <div key={i} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-3">
-                      <div className="text-[9px] font-black text-white/25 uppercase tracking-widest">{stat.label}</div>
-                      <div className="text-2xl font-black text-white tabular-nums">{stat.val}</div>
-                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div key={i} className="p-4 rounded-[var(--radius)] bg-white border-3 border-black shadow-[3px_3px_0px_0px_#000000] space-y-3">
+                      <div className="text-[9px] font-black text-black/40 uppercase tracking-widest">{stat.label}</div>
+                      <div className="text-2xl font-black text-black tabular-nums">{stat.val}</div>
+                      <div className="h-3 w-full bg-gray-100 border-2 border-black rounded-sm overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: stat.pct }}
                           transition={{ duration: 1.5, delay: 0.5 + i * 0.2 }}
-                          className={`h-full ${stat.color} rounded-full shadow-lg ${stat.glow}`}
+                          className={`h-full ${stat.color} border-r border-black`}
                         />
                       </div>
                     </div>
@@ -200,9 +194,9 @@ export function Hero() {
                 </div>
 
                 {/* AI conclusion */}
-                <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
-                  <div className="text-[9px] font-black text-primary uppercase tracking-widest mb-1.5">AI Conclusion</div>
-                  <div className="text-sm font-medium text-white/80 leading-relaxed">
+                <div className="p-4 rounded-[var(--radius)] bg-[#2ee59d] text-black border-3 border-black shadow-[3px_3px_0px_0px_#000000]">
+                  <div className="text-[9px] font-black uppercase tracking-widest mb-1">{"AI Conclusion"}</div>
+                  <div className="text-xs font-bold leading-relaxed">
                     Strong Buyer Signal detected. User exhibits high engagement and positive expression.
                   </div>
                 </div>
@@ -210,13 +204,13 @@ export function Hero() {
 
               {/* Floating badge */}
               <motion.div
-                animate={{ y: [0, -12, 0] }}
+                animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-6 -right-6 p-4 rounded-2xl bg-[#080c14]/90 border border-white/10 backdrop-blur-xl shadow-2xl"
+                className="absolute -bottom-6 -right-6 p-4 rounded-[var(--radius)] bg-[#ff007a] text-white border-3 border-black shadow-[4px_4px_0px_0px_#000000]"
               >
-                <div className="text-[9px] font-black text-primary uppercase tracking-widest mb-1">Intent Confidence</div>
-                <div className="text-xl font-black text-white flex items-center gap-2 tabular-nums">
-                  94.2% <span className="text-[10px] font-normal text-white/30 italic">match</span>
+                <div className="text-[9px] font-black uppercase tracking-widest mb-1">{"Intent Confidence"}</div>
+                <div className="text-xl font-black flex items-center gap-2 tabular-nums">
+                  94.2% <span className="text-[10px] font-normal italic">{"match"}</span>
                 </div>
               </motion.div>
             </motion.div>

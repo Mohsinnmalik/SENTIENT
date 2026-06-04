@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Lexend, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-heading",
+  subsets: ["latin"],
+});
+
+const lexend = Lexend({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -29,11 +34,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      className={`${lexend.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body 
-        className="min-h-full flex flex-col bg-[#04060f] text-slate-200 selection:bg-primary/30 font-sans"
+        className="min-h-full flex flex-col bg-background text-foreground font-sans"
         suppressHydrationWarning
       >
         <Navbar />

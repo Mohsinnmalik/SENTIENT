@@ -90,79 +90,75 @@ export default function SetupPage() {
   if (!hasMounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#04060f] text-slate-200 selection:bg-primary/30 relative overflow-hidden font-sans pb-24">
-      {/* Background Orbs */}
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative overflow-hidden font-sans pb-24">
+      {/* Background Dot grid */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full mix-blend-screen" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-500/5 blur-[100px] rounded-full mix-blend-screen" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:30px_30px]" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12 relative z-10 space-y-12">
         {/* Header */}
-        <div className="flex items-center gap-6 border-b border-white/5 pb-8">
+        <div className="flex items-center gap-6 border-b-3 border-border pb-8">
           <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/[0.02] border border-white/10 hover:bg-white/10 hover:text-white transition-all text-slate-400">
+            <Button variant="outline" size="icon" className="h-12 w-12 text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2 flex items-center gap-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2 flex items-center gap-2">
               <Terminal className="h-3 w-3" /> System Configurator
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white pt-1">Initialize Product</h1>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground pt-1">Initialize Product</h1>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10">
           {/* Section 1: Identity */}
-          <div className="bg-white/[0.01] border border-white/[0.04] rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            
+          <div className="bg-card border-3 border-border rounded-[var(--radius)] p-8 md:p-12 relative overflow-hidden shadow-[4px_4px_0px_0px_var(--border)]">
             <div className="mb-10">
-              <h2 className="text-2xl font-black text-white mb-2">01. Identity Matrix</h2>
-              <p className="text-slate-500 text-sm font-medium">Core parameters defining the target entity.</p>
+              <h2 className="text-2xl font-black text-foreground mb-2">01. Identity Matrix</h2>
+              <p className="text-muted-foreground text-sm font-medium">Core parameters defining the target entity.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Entity Designation</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Entity Designation</label>
                 <Input 
                   placeholder="e.g. NeoTab S21" required value={formData.name}
                   onChange={e => setFormData(p => ({...p, name: e.target.value}))}
-                  className="h-14 rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-primary/50 text-base font-bold placeholder:text-slate-600 focus-visible:border-primary/50 transition-all"
+                  className="h-14 rounded-[var(--radius)] bg-card border-3 border-border focus-visible:ring-primary text-base font-bold placeholder:text-muted-foreground/60 transition-all"
                 />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Classification Class</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Classification Class</label>
                 <div className="relative">
                   <select 
                     required value={formData.type} onChange={e => setFormData(p => ({...p, type: e.target.value}))}
-                    className="w-full h-14 rounded-2xl bg-white/[0.03] border border-white/10 text-base font-bold text-white px-4 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                    className="w-full h-14 rounded-[var(--radius)] bg-card border-3 border-border text-base font-bold text-foreground px-4 appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   >
-                    <option value="" disabled className="bg-[#04060f] text-slate-500">Select class...</option>
-                    {PRODUCT_TYPES.map(t => <option key={t} value={t} className="bg-[#04060f]">{t}</option>)}
+                    <option value="" disabled className="bg-card text-muted-foreground">Select class...</option>
+                    {PRODUCT_TYPES.map(t => <option key={t} value={t} className="bg-card text-foreground">{t}</option>)}
                   </select>
-                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 rotate-90 pointer-events-none" />
+                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground rotate-90 pointer-events-none" />
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Core Description</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Core Description</label>
               <Textarea 
                 placeholder="Detail the technical specifications and value propositions..." required value={formData.description}
                 onChange={e => setFormData(p => ({...p, description: e.target.value}))}
-                className="min-h-[140px] rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-primary/50 text-base font-medium placeholder:text-slate-600 focus-visible:border-primary/50 resize-none p-5"
+                className="min-h-[140px] rounded-[var(--radius)] bg-card border-3 border-border focus-visible:ring-primary text-base font-medium placeholder:text-muted-foreground/60 resize-none p-5"
               />
             </div>
           </div>
 
           {/* Section 2: Scanners */}
-          <div className="bg-white/[0.01] border border-white/[0.04] rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
+          <div className="bg-card border-3 border-border rounded-[var(--radius)] p-8 md:p-12 relative overflow-hidden shadow-[4px_4px_0px_0px_var(--border)]">
              <div className="mb-10">
-              <h2 className="text-2xl font-black text-white mb-2">02. Focal Scanners</h2>
-              <p className="text-slate-500 text-sm font-medium">Select vectors for AI question targeting.</p>
+              <h2 className="text-2xl font-black text-foreground mb-2">02. Focal Scanners</h2>
+              <p className="text-muted-foreground text-sm font-medium">Select vectors for AI question targeting.</p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -172,13 +168,13 @@ export default function SetupPage() {
                   <div 
                     key={area}
                     onClick={() => handleToggleFocusArea(area)}
-                    className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 flex flex-col items-center justify-center gap-3 h-24 ${
+                    className={`cursor-pointer rounded-[var(--radius)] border-3 p-4 transition-all duration-150 flex flex-col items-center justify-center gap-3 h-24 shadow-[2px_2px_0px_0px_var(--border)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_var(--border)] ${
                       isActive 
-                        ? 'bg-primary/10 border-primary/30 text-primary shadow-[0_0_15px_rgba(99,102,241,0.15)]' 
-                        : 'bg-white/[0.02] border-white/5 text-slate-400 hover:bg-white/[0.04] hover:border-white/10'
+                        ? 'bg-[#ffe600] text-black border-border shadow-[4px_4px_0px_0px_var(--border)] -translate-x-0.5 -translate-y-0.5' 
+                        : 'bg-card border-border text-foreground hover:bg-muted'
                     }`}
                   >
-                     <div className={`h-2 w-2 rounded-full ${isActive ? 'bg-primary shadow-[0_0_8px_theme(colors.primary.DEFAULT)]' : 'bg-white/20'}`} />
+                     <div className={`h-2.5 w-2.5 rounded-full border-2 border-border ${isActive ? 'bg-[#ff007a]' : 'bg-muted-foreground/20'}`} />
                      <span className="text-xs font-black uppercase tracking-widest text-center">{area}</span>
                   </div>
                 )
@@ -187,40 +183,40 @@ export default function SetupPage() {
           </div>
 
           {/* Section 3: Audience Bias */}
-          <div className="bg-white/[0.01] border border-white/[0.04] rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden">
+          <div className="bg-card border-3 border-border rounded-[var(--radius)] p-8 md:p-12 relative overflow-hidden shadow-[4px_4px_0px_0px_var(--border)]">
              <div className="mb-10">
-              <h2 className="text-2xl font-black text-white mb-2">03. Synthesis Bias</h2>
-              <p className="text-slate-500 text-sm font-medium">Inject persona constraints into the neural framework.</p>
+              <h2 className="text-2xl font-black text-foreground mb-2">03. Synthesis Bias</h2>
+              <p className="text-muted-foreground text-sm font-medium">Inject persona constraints into the neural framework.</p>
             </div>
 
             <div className="space-y-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Target Persona</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Target Persona</label>
                 <Input 
                   placeholder="e.g. Enterprise architects, crypto traders" required value={formData.targetAudience}
                   onChange={e => setFormData(p => ({...p, targetAudience: e.target.value}))}
-                  className="h-14 rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-primary/50 text-base font-bold placeholder:text-slate-600 focus-visible:border-primary/50"
+                  className="h-14 rounded-[var(--radius)] bg-card border-3 border-border focus-visible:ring-primary text-base font-bold placeholder:text-muted-foreground/60"
                 />
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Buyer Purchase Criteria</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Buyer Purchase Criteria</label>
                 <Textarea 
                   placeholder="What triggers a buying decision? (ROI, aesthetics, speed...)" required value={formData.buyerCriteria}
                   onChange={e => setFormData(p => ({...p, buyerCriteria: e.target.value}))}
-                  className="min-h-[100px] rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-primary/50 text-base font-medium placeholder:text-slate-600 p-5"
+                  className="min-h-[100px] rounded-[var(--radius)] bg-card border-3 border-border focus-visible:ring-primary text-base font-medium placeholder:text-muted-foreground/60 p-5"
                 />
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3 px-1">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Investor Criteria</label>
-                   <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-white/5 text-slate-500 border border-white/10">Optional Node</span>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Investor Criteria</label>
+                   <span className="px-2 py-0.5 rounded-[var(--radius)] text-[8px] font-black uppercase tracking-widest bg-muted text-muted-foreground border-2 border-border">Optional Node</span>
                 </div>
                 <Textarea 
                   placeholder="What indicators suggest high ROI for stakeholders?" value={formData.investorCriteria}
                   onChange={e => setFormData(p => ({...p, investorCriteria: e.target.value}))}
-                  className="min-h-[100px] rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-primary/50 text-base font-medium placeholder:text-slate-600 p-5"
+                  className="min-h-[100px] rounded-[var(--radius)] bg-card border-3 border-border focus-visible:ring-primary text-base font-medium placeholder:text-muted-foreground/60 p-5"
                 />
               </div>
             </div>
@@ -230,18 +226,17 @@ export default function SetupPage() {
           <div className="pt-8">
             <Button 
               type="submit" 
-              className="w-full h-20 rounded-[2rem] bg-gradient-to-r from-primary to-indigo-600 hover:from-primary text-xl font-black tracking-wide uppercase text-white shadow-[0_0_40px_rgba(99,102,241,0.3)] transition-all hover:scale-[1.01] active:scale-[0.99] group overflow-hidden relative border-0"
+              className="w-full h-16 bg-[#ff007a] text-white border-3 border-border shadow-[4px_4px_0px_0px_var(--border)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_var(--border)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_var(--border)] transition-all text-xl font-black uppercase"
               disabled={isLoading}
             >
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
               {isLoading ? (
                 <span className="flex items-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> SYNTHESIZING NEURAL ARRAY...</span>
               ) : (
                 <span className="flex items-center gap-3"><Sparkles className="h-6 w-6" /> COMMENCE SYNTHESIS</span>
               )}
             </Button>
-            <p className="text-center mt-6 text-xs font-bold text-slate-500 flex items-center justify-center gap-2">
-              <Info className="h-4 w-4" /> The AI core will parse inputs and compile the toolkit.
+            <p className="text-center mt-6 text-xs font-bold text-muted-foreground flex items-center justify-center gap-2">
+              <Info className="h-4 w-4 text-[#ff007a]" /> The AI core will parse inputs and compile the toolkit.
             </p>
           </div>
         </form>

@@ -18,7 +18,7 @@ export default function LandingPage() {
   if (!hasMounted) return null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#020617] text-slate-50 selection:bg-primary/30 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-background text-foreground select-none">
       <Hero />
       <HowItWorks />
       <DemoPreview />
